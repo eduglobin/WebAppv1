@@ -1,0 +1,200 @@
+village_or_area,tehsil,district,state
+Bhawarkua,Indore,Indore,Madhya Pradesh
+Vijay Nagar,Indore,Indore,Madhya Pradesh
+Palasia,Indore,Indore,Madhya Pradesh
+MG Road,Indore,Indore,Madhya Pradesh
+Rau,Mhow,Indore,Madhya Pradesh
+Talwandi,Kota,Kota,Rajasthan
+Vigyan Nagar,Kota,Kota,Rajasthan
+Gumanpura,Kota,Kota,Rajasthan
+Rangbari,Kota,Kota,Rajasthan
+Dadi ka Phatak,Kota,Kota,Rajasthan
+Piprali Road,Sikar,Sikar,Rajasthan
+Nawalgarh Road,Sikar,Sikar,Rajasthan
+Radha Kishanpura,Sikar,Sikar,Rajasthan
+Samrathpura,Sikar,Sikar,Rajasthan
+Mukherjee Nagar,Civil Lines,North Delhi,Delhi
+Rajinder Nagar,Karol Bagh,Central Delhi,Delhi
+Karol Bagh,Karol Bagh,Central Delhi,Delhi
+Laxmi Nagar,Preet Vihar,East Delhi,Delhi
+Munirka,Vasant Vihar,South West Delhi,Delhi
+Kalu Sarai,Hauz Khas,South Delhi,Delhi
+Katra,Allahabad,Prayagraj,Uttar Pradesh
+Civil Lines,Allahabad,Prayagraj,Uttar Pradesh
+Mumfordganj,Allahabad,Prayagraj,Uttar Pradesh
+Georgetown,Allahabad,Prayagraj,Uttar Pradesh
+Kankarbagh,Patna,Patna,Bihar
+Boring Road,Patna,Patna,Bihar
+Rajendra Nagar,Patna,Patna,Bihar
+Mahendru,Patna,Patna,Bihar
+Sadashiv Peth,Pune,Pune,Maharashtra
+Narayan Peth,Pune,Pune,Maharashtra
+Shaniwar Peth,Pune,Pune,Maharashtra
+Deccan,Pune,Pune,Maharashtra
+Ashok Nagar,Musheerabad,Hyderabad,Telangana
+Himayatnagar,Himayatnagar,Hyderabad,Telangana
+Ameerpet,Ameerpet,Hyderabad,Telangana
+Dilsukhnagar,Saroornagar,Hyderabad,Telangana
+Aliganj,Lucknow,Lucknow,Uttar Pradesh
+Hazratganj,Lucknow,Lucknow,Uttar Pradesh
+Gomti Nagar,Lucknow,Lucknow,Uttar Pradesh
+Kapoorthala,Lucknow,Lucknow,Uttar Pradesh
+MP Nagar,Huzur,Bhopal,Madhya Pradesh
+Indrapuri,Huzur,Bhopal,Madhya Pradesh
+Gopalpura Bypass,Sanganer,Jaipur,Rajasthan
+Lal Kothi,Jaipur,Jaipur,Rajasthan
+Koramangala,Bengaluru South,Bengaluru Urban,Karnataka
+Jayanagar,Bengaluru South,Bengaluru Urban,Karnataka
+Malleshwaram,Bengaluru North,Bengaluru Urban,Karnataka
+Anna Nagar,Aminjikarai,Chennai,Tamil Nadu
+Nungambakkam,Egmore,Chennai,Tamil Nadu
+Salt Lake,Bidhannagar,North 24 Parganas,West Bengal
+Gariahat,Kolkata,Kolkata,West Bengal
+Vastrapur,Ghatlodia,Ahmedabad,Gujarat
+Navrangpura,Sabarmati,Ahmedabad,Gujarat
+Sector 14,Gurugram,Gurugram,Haryana
+Acharya Vihar,Bhubaneswar,Khurda,Odisha
+Lalpur,Ranchi,Ranchi,Jharkhand
+Karanpur,Dehradun,Dehradun,Uttarakhand
+Kota Area,Raipur,Raipur,Chhattisgarh
+Panaji,Tiswadi,North Goa,Goa
+Sector 62,Noida,Gautam Buddha Nagar,Uttar Pradesh
+Lanka,Varanasi,Varanasi,Uttar Pradesh
+Andheri,Andheri,Mumbai Suburban,Maharashtra
+Thane West,Thane,Thane,Maharashtra
+Rohtak,Rohtak,Rohtak,Haryana
+Ludhiana,Ludhiana,Ludhiana,Punjab
+Patiala,Patiala,Patiala,Punjab
+Vijayawada,Vijayawada,NTR,Andhra Pradesh
+Visakhapatnam,Visakhapatnam,Visakhapatnam,Andhra Pradesh
+Guwahati,Guwahati,Kamrup Metropolitan,Assam
+Thiruvananthapuram,Thiruvananthapuram,Thiruvananthapuram,Kerala
+Kochi,Kanayannur,Ernakulam,Kerala
+Shimla,Shimla,Shimla,Himachal Pradesh
+Srinagar,Srinagar,Srinagar,Jammu & Kashmir
+Jammu,Jammu,Jammu,Jammu & Kashmir
+Imphal,Imphal West,Imphal West,Manipur
+Shillong,Shillong,East Khasi Hills,Meghalaya
+Aizawl,Aizawl,Aizawl,Mizoram
+Kohima,Kohima,Kohima,Nagaland
+Gangtok,Gangtok,East Sikkim,Sikkim
+Agartala,Agartala,West Tripura,Tripura
+Port Blair,Port Blair,South Andaman,Andaman & Nicobar Islands
+Chandigarh,Chandigarh,Chandigarh,Chandigarh
+Silvassa,Silvassa,Dadra & Nagar Haveli,Dadra & Nagar Haveli and Daman & Diu
+Daman,Daman,Daman,Dadra & Nagar Haveli and Daman & Diu
+Kavaratti,Kavaratti,Lakshadweep,Lakshadweep
+Puducherry,Puducherry,Puducherry,Puducherry
+Leh,Leh,Leh,Ladakh
+Kargil,Kargil,Kargil,Ladakh
+Itanagar,Itanagar,Papum Pare,Arunachal Pradesh
+Dispur,Guwahati,Kamrup Metropolitan,Assam
+Raipur,Raipur,Raipur,Chhattisgarh
+Ranchi,Ranchi,Ranchi,Jharkhand
+Dehradun,Dehradun,Dehradun,Uttarakhand
+Shimla,Shimla,Shimla,Himachal Pradesh
+Srinagar,Srinagar,Srinagar,Jammu & Kashmir
+Jammu,Jammu,Jammu,Jammu & Kashmir
+Jamshedpur,Golmuri cum Jugsalai,East Singhbhum,Jharkhand
+Dhanbad,Dhanbad,Dhanbad,Jharkhand
+Bokaro,Chas,Bokaro,Jharkhand
+Hazaribagh,Hazaribagh,Hazaribagh,Jharkhand
+Bilaspur,Bilaspur,Bilaspur,Chhattisgarh
+Bhilai,Durg,Durg,Chhattisgarh
+Korba,Korba,Korba,Chhattisgarh
+Rourkela,Panposh,Sundargarh,Odisha
+Cuttack,Cuttack,Cuttack,Odisha
+Sambalpur,Sambalpur,Sambalpur,Odisha
+Puri,Puri,Puri,Odisha
+Karnal,Karnal,Karnal,Haryana
+Ambala,Ambala,Ambala,Haryana
+Hisar,Hisar,Hisar,Haryana
+Panipat,Panipat,Panipat,Haryana
+Amritsar,Amritsar,Amritsar,Punjab
+Jalandhar,Jalandhar,Jalandhar,Punjab
+Bathinda,Bathinda,Bathinda,Punjab
+Mohali,Kharar,Sahibzada Ajit Singh Nagar,Punjab
+Gorakhpur,Gorakhpur,Gorakhpur,Uttar Pradesh
+Jhansi,Jhansi,Jhansi,Uttar Pradesh
+Meerut,Meerut,Meerut,Uttar Pradesh
+Agra,Agra,Agra,Uttar Pradesh
+Bareilly,Bareilly,Bareilly,Uttar Pradesh
+Kanpur,Kanpur,Kanpur,Uttar Pradesh
+Gaya,Gaya,Gaya,Bihar
+Muzaffarpur,Muzaffarpur,Muzaffarpur,Bihar
+Bhagalpur,Bhagalpur,Bhagalpur,Bihar
+Darbhanga,Darbhanga,Darbhanga,Bihar
+Noida,Dadri,Gautam Buddha Nagar,Uttar Pradesh
+Ghaziabad,Ghaziabad,Ghaziabad,Uttar Pradesh
+Mathura,Mathura,Mathura,Uttar Pradesh
+Ayodhya,Ayodhya,Ayodhya,Uttar Pradesh
+Aligarh,Aligarh,Aligarh,Uttar Pradesh
+Kota,Kota,Kota,Rajasthan
+Indore,Indore,Indore,Madhya Pradesh
+Jabalpur,Jabalpur,Jabalpur,Madhya Pradesh
+Gwalior,Gwalior,Gwalior,Madhya Pradesh
+Ujjain,Ujjain,Ujjain,Madhya Pradesh
+Sagar,Sagar,Sagar,Madhya Pradesh
+Bhopal,Bhopal,Bhopal,Madhya Pradesh
+Jaipur,Jaipur,Jaipur,Rajasthan
+Jodhpur,Jodhpur,Jodhpur,Rajasthan
+Udaipur,Udaipur,Udaipur,Rajasthan
+Ajmer,Ajmer,Ajmer,Rajasthan
+Bikaner,Bikaner,Bikaner,Rajasthan
+Sikar,Sikar,Sikar,Rajasthan
+Alwar,Alwar,Alwar,Rajasthan
+Pune,Pune,Pune,Maharashtra
+Nagpur,Nagpur,Nagpur,Maharashtra
+Nashik,Nashik,Nashik,Maharashtra
+Aurangabad,Aurangabad,Aurangabad,Maharashtra
+Solapur,Solapur,Solapur,Maharashtra
+Thane,Thane,Thane,Maharashtra
+Kolhapur,Kolhapur,Kolhapur,Maharashtra
+Ahmedabad,Ahmedabad,Ahmedabad,Gujarat
+Surat,Surat,Surat,Gujarat
+Vadodara,Vadodara,Vadodara,Gujarat
+Rajkot,Rajkot,Rajkot,Gujarat
+Bhavnagar,Bhavnagar,Bhavnagar,Gujarat
+Jamnagar,Jamnagar,Jamnagar,Gujarat
+Hyderabad,Hyderabad,Hyderabad,Telangana
+Warangal,Warangal,Hanumakonda,Telangana
+Nizamabad,Nizamabad,Nizamabad,Telangana
+Karimnagar,Karimnagar,Karimnagar,Telangana
+Khammam,Khammam,Khammam,Telangana
+Bengaluru,Bengaluru,Bengaluru Urban,Karnataka
+Mysuru,Mysuru,Mysuru,Karnataka
+Hubballi,Hubli,Dharwad,Karnataka
+Mangaluru,Mangalore,Dakshina Kannada,Karnataka
+Belagavi,Belgaum,Belagavi,Karnataka
+Chennai,Chennai,Chennai,Tamil Nadu
+Coimbatore,Coimbatore,Coimbatore,Tamil Nadu
+Madurai,Madurai,Madurai,Tamil Nadu
+Tiruchirappalli,Tiruchirappalli,Tiruchirappalli,Tamil Nadu
+Salem,Salem,Salem,Tamil Nadu
+Kochi,Kochi,Ernakulam,Kerala
+Kozhikode,Kozhikode,Kozhikode,Kerala
+Thrissur,Thrissur,Thrissur,Kerala
+Kollam,Kollam,Kollam,Kerala
+Kolkata,Kolkata,Kolkata,West Bengal
+Howrah,Howrah,Howrah,West Bengal
+Durgapur,Durgapur,Paschim Bardhaman,West Bengal
+Asansol,Asansol,Paschim Bardhaman,West Bengal
+Siliguri,Siliguri,Darjeeling,West Bengal
+Guwahati,Guwahati,Kamrup Metropolitan,Assam
+Dibrugarh,Dibrugarh,Dibrugarh,Assam
+Silchar,Silchar,Cachar,Assam
+Jorhat,Jorhat,Jorhat,Assam
+Imphal,Imphal East,Imphal East,Manipur
+Shillong,Shillong,East Khasi Hills,Meghalaya
+Aizawl,Aizawl,Aizawl,Mizoram
+Kohima,Kohima,Kohima,Nagaland
+Gangtok,Gangtok,East Sikkim,Sikkim
+Agartala,Agartala,West Tripura,Tripura
+Itanagar,Itanagar,Papum Pare,Arunachal Pradesh
+Panaji,Tiswadi,North Goa,Goa
+Margao,Salcete,South Goa,Goa
+Port Blair,Port Blair,South Andaman,Andaman & Nicobar Islands
+Kavaratti,Kavaratti,Lakshadweep,Lakshadweep
+Puducherry,Puducherry,Puducherry,Puducherry
+Leh,Leh,Leh,Ladakh
+Kargil,Kargil,Kargil,Ladakh

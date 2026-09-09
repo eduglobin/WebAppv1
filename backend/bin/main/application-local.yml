@@ -1,0 +1,24 @@
+# Local development overrides — active with: --spring.profiles.active=local
+
+spring:
+  datasource:
+    # Uncomment to use local Docker Postgres instead of Supabase:
+    # url: jdbc:postgresql://localhost:5432/eduglobin
+    # username: postgres
+    # password: postgres
+
+  data:
+    redis:
+      # Override to point at local Docker Redis (no SSL, no password)
+      url: ${REDIS_LOCAL_URL:redis://localhost:6379}
+      password:
+      ssl:
+        enabled: false
+
+logging:
+  level:
+    root: INFO
+    com.eduglobin: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.jdbc: DEBUG
+    org.flywaydb: DEBUG

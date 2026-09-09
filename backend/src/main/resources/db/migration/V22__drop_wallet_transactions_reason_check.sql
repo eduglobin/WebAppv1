@@ -1,0 +1,1 @@
+ALTER TABLE wallet_transactions DROP CONSTRAINT IF EXISTS wallet_transactions_reason_check;

@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: eduglobin-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+    depends_on:
+      - backend
+      - frontend
+
+  backend:
+    image: ghcr.io/${IMAGE_REPO:-eduglobin/eduglobin}/backend:${IMAGE_TAG:-latest}
+    container_name: eduglobin-backend
+    env_file: .env.production
+    restart: unless-stopped
+    depends_on:
+      - redis
+    ports:
+      - "8080:8080"
+
+  frontend:
+    image: ghcr.io/${IMAGE_REPO:-eduglobin/eduglobin}/frontend:${IMAGE_TAG:-latest}
+    container_name: eduglobin-frontend
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: eduglobin-redis-prod
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
+  redis_data:

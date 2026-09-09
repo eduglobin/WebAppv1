@@ -1,0 +1,62 @@
+{
+  "appName": "EduGlobin",
+  "tagline": "भारत का सबसे बड़ा छात्र पारिस्थितिकी तंत्र मंच",
+  "language": "भाषा",
+  "theme": {
+    "toggle": "थीम बदलें",
+    "light": "लाइट थीम",
+    "dark": "डार्क थीम",
+    "system": "सिस्टम थीम"
+  },
+  "nav": {
+    "home": "होम",
+    "search": "खोज",
+    "recommend": "AI सॉल्वर",
+    "about": "हमारे बारे में",
+    "signOut": "साइन आउट"
+  },
+  "login": {
+    "welcome": "वापसी पर आपका स्वागत है! 👋",
+    "welcomeBack": "वापसी पर आपका स्वागत है! 👋",
+    "welcomeNew": "आपका स्वागत है! 👋",
+    "emailLabel": "ईमेल पता",
+    "passwordLabel": "पासवर्ड",
+    "signIn": "साइन इन करें",
+    "signingIn": "साइन इन हो रहा है...",
+    "signUp": "खाता बनाएं",
+    "signingUp": "खाता बनाया जा रहा है...",
+    "orSignUp": "नए सदस्य हैं?",
+    "createAccount": "पंजीकरण करें",
+    "backToLogin": "पहले से खाता है? साइन इन करें",
+    "contactAdmin": "पहुंच के लिए अपने Eduglobin व्यवस्थापक से संपर्क करें।",
+    "rememberMe": "मुझे याद रखें",
+    "forgotPassword": "पासवर्ड भूल गए?",
+    "orContinueWith": "या इसके साथ जारी रखें",
+    "continueWithGoogle": "Google के साथ जारी रखें",
+    "tabs": {
+      "student": "छात्र",
+      "owner": "लाइब्रेरी मालिक",
+      "staff": "स्टाफ",
+      "admin": "एडमिन"
+    },
+    "role": {
+      "student": "छात्र",
+      "owner": "लाइब्रेरी मालिक",
+      "staff": "स्टाफ",
+      "admin": "सुपर एडमिन"
+    }
+  },
+  "errors": {
+    "roleMismatch": "आप इस पोर्टल के माध्यम से लॉग इन करने के लिए अधिकृत नहीं हैं। कृपया सही टैब चुनें।",
+    "invalidCredentials": "अमान्य ईमेल या पासवर्ड।",
+    "accountSuspended": "आपका खाता निलंबित कर दिया गया है।",
+    "accountPending": "आपका खाता व्यवस्थापक की स्वीकृति की प्रतीक्षा कर रहा है।",
+    "generic": "कुछ गलत हो गया। कृपया पुन: प्रयास करें।"
+  },
+  "me": {
+    "loggedInAs": "लॉग इन किया हुआ है",
+    "yourId": "आपकी यूज़र आईडी",
+    "yourRole": "आपकी भूमिका",
+    "yourEmail": "ईमेल"
+  }
+}

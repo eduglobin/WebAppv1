@@ -1,0 +1,62 @@
+{
+  "appName": "EduGlobin",
+  "tagline": "India's Greatest Students Ecosystem Platform",
+  "language": "Language",
+  "theme": {
+    "toggle": "Toggle theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "nav": {
+    "home": "Home",
+    "search": "Search",
+    "recommend": "AI Solver",
+    "about": "About Us",
+    "signOut": "Sign Out"
+  },
+  "login": {
+    "welcome": "Welcome back! 👋",
+    "welcomeBack": "Welcome back! 👋",
+    "welcomeNew": "Welcome! 👋",
+    "emailLabel": "Email address",
+    "passwordLabel": "Password",
+    "signIn": "Sign In",
+    "signingIn": "Signing in...",
+    "signUp": "Create Account",
+    "signingUp": "Creating account...",
+    "orSignUp": "New here?",
+    "createAccount": "Sign Up",
+    "backToLogin": "Already have an account? Sign In",
+    "contactAdmin": "Contact your Eduglobin administrator for access.",
+    "rememberMe": "Remember me",
+    "forgotPassword": "Forgot password?",
+    "orContinueWith": "or continue with",
+    "continueWithGoogle": "Continue with Google",
+    "tabs": {
+      "student": "Student",
+      "owner": "Library Owner",
+      "staff": "Staff",
+      "admin": "Admin"
+    },
+    "role": {
+      "student": "Student",
+      "owner": "Library Owner",
+      "staff": "Staff",
+      "admin": "Super Admin"
+    }
+  },
+  "errors": {
+    "roleMismatch": "You are not authorised to log in through this portal. Please select the correct login tab.",
+    "invalidCredentials": "Invalid email or password.",
+    "accountSuspended": "Your account has been suspended.",
+    "accountPending": "Your account is awaiting approval.",
+    "generic": "Something went wrong. Please try again."
+  },
+  "me": {
+    "loggedInAs": "Logged in as",
+    "yourId": "Your User ID",
+    "yourRole": "Your Role",
+    "yourEmail": "Email"
+  }
+}

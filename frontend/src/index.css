@@ -1,0 +1,30 @@
+/* Google Fonts - Inter & Noto Sans Devanagari for bilingual support */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Devanagari:wght@300;400;500;600;700;800&display=swap');
+
+@import "tailwindcss";
+
+/* Configure selector-based dark mode for Tailwind v4 */
+@variant dark (&:where(.dark, .dark *));
+
+/* Global resets */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', 'Noto Sans Devanagari', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background-color: #f6f8fc;
+  color: #0f172a;
+  transition: background-color 300ms, color 300ms;
+}
+
+html.dark body {
+  background-color: #020617;
+  color: #f8fafc;
+}
+
+#root {
+  min-height: 100vh;
+}

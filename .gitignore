@@ -1,0 +1,60 @@
+# ──────────────────────────────────────────
+# Secrets — NEVER commit these
+# ──────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+backend/src/main/resources/application-secrets.yml
+
+# ──────────────────────────────────────────
+# Java / Gradle
+# ──────────────────────────────────────────
+backend/build/
+backend/.gradle/
+backend/out/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.zip
+*.tar.gz
+hs_err_pid*
+
+# ──────────────────────────────────────────
+# IDEs
+# ──────────────────────────────────────────
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/settings.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ──────────────────────────────────────────
+# Node / Frontend
+# ──────────────────────────────────────────
+node_modules/
+frontend/dist/
+frontend/.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ──────────────────────────────────────────
+# OS
+# ──────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ──────────────────────────────────────────
+# Logs
+# ──────────────────────────────────────────
+*.log
+logs/

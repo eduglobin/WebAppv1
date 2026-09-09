@@ -1,0 +1,24 @@
+# Production Caddyfile — Automatic HTTPS via Let's Encrypt
+{$DOMAIN:eduglobin.app} {
+    # Backend API routing
+    reverse_proxy /api/* backend:8080 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    # Frontend SPA routing
+    reverse_proxy /* frontend:80 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    # Logging
+    log {
+        output stdout
+        format console
+    }
+}
