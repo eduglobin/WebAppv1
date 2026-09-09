@@ -240,39 +240,66 @@ public class BookingService {
         jdbcTemplate.update(insertBookingSql, bookingParams);
 
         // Auto-upsert into student_library_profiles for (studentId, libraryId)
-        if ((req.getCollegeEmail() != null && !req.getCollegeEmail().isBlank()) ||
-            (req.getCollegeIdNumber() != null && !req.getCollegeIdNumber().isBlank())) {
+        try {
+            String aadhaar = req.getAadhaarLast4();
+            String maskedAadhaar = aadhaar != null && !aadhaar.isBlank() ? "XXXX-XXXX-" + aadhaar.trim() : null;
+            String customJson = "{}";
+            if (req.getCustomFields() != null && !req.getCustomFields().isEmpty()) {
+                customJson = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(req.getCustomFields());
+            }
+
             String upsertProfileSql = """
                 INSERT INTO student_library_profiles (
                     id, student_id, library_id, library_category, institute_email, institute_id_number,
-                    branch, is_claimed, claimed_at, is_active, created_at, updated_at
+                    branch, year, gender, full_name, phone_number, masked_aadhaar, masked_pan, target_exam,
+                    custom_identity_fields, is_claimed, claimed_at, is_active, created_at, updated_at
                 ) VALUES (
-                    gen_random_uuid(), CAST(:sid AS uuid), :lid, 'INSTITUTE', :email, :idNum,
-                    :branch, TRUE, NOW(), TRUE, NOW(), NOW()
+                    gen_random_uuid(), CAST(:sid AS uuid), :lid, :cat, :email, :idNum,
+                    :branch, :year, :gender, :fullName, :phone, :maskedAadhaar, :maskedPan, :targetExam,
+                    CAST(:customFields AS jsonb), TRUE, NOW(), TRUE, NOW(), NOW()
                 )
                 ON CONFLICT (student_id, library_id) DO UPDATE SET
+                    library_category = EXCLUDED.library_category,
                     institute_email = COALESCE(EXCLUDED.institute_email, student_library_profiles.institute_email),
                     institute_id_number = COALESCE(EXCLUDED.institute_id_number, student_library_profiles.institute_id_number),
                     branch = COALESCE(EXCLUDED.branch, student_library_profiles.branch),
+                    year = COALESCE(EXCLUDED.year, student_library_profiles.year),
+                    gender = COALESCE(EXCLUDED.gender, student_library_profiles.gender),
+                    full_name = COALESCE(EXCLUDED.full_name, student_library_profiles.full_name),
+                    phone_number = COALESCE(EXCLUDED.phone_number, student_library_profiles.phone_number),
+                    masked_aadhaar = COALESCE(EXCLUDED.masked_aadhaar, student_library_profiles.masked_aadhaar),
+                    masked_pan = COALESCE(EXCLUDED.masked_pan, student_library_profiles.masked_pan),
+                    target_exam = COALESCE(EXCLUDED.target_exam, student_library_profiles.target_exam),
+                    custom_identity_fields = COALESCE(EXCLUDED.custom_identity_fields, student_library_profiles.custom_identity_fields),
                     is_claimed = TRUE,
                     claimed_at = COALESCE(student_library_profiles.claimed_at, NOW()),
                     updated_at = NOW()
                 """;
-            try {
-                jdbcTemplate.update(upsertProfileSql, new MapSqlParameterSource()
-                        .addValue("sid", studentId)
-                        .addValue("lid", req.getLibraryId())
-                        .addValue("email", req.getCollegeEmail())
-                        .addValue("idNum", req.getCollegeIdNumber())
-                        .addValue("branch", req.getBranchDepartment()));
 
-                // Also update owner_pre_registered_students table if pre-listed
+            jdbcTemplate.update(upsertProfileSql, new MapSqlParameterSource()
+                    .addValue("sid", studentId)
+                    .addValue("lid", req.getLibraryId())
+                    .addValue("cat", category)
+                    .addValue("email", req.getCollegeEmail())
+                    .addValue("idNum", req.getCollegeIdNumber())
+                    .addValue("branch", req.getBranchDepartment())
+                    .addValue("year", req.getDegreeProgram())
+                    .addValue("gender", req.getStudentGender())
+                    .addValue("fullName", req.getFullName())
+                    .addValue("phone", req.getPhone())
+                    .addValue("maskedAadhaar", maskedAadhaar)
+                    .addValue("maskedPan", req.getPanNumber())
+                    .addValue("targetExam", req.getTargetExam())
+                    .addValue("customFields", customJson)
+            );
+
+            if (req.getCollegeIdNumber() != null && !req.getCollegeIdNumber().isBlank()) {
                 jdbcTemplate.update(
                         "UPDATE owner_pre_registered_students SET is_claimed = TRUE, claimed_at = NOW() WHERE library_id = :lid AND LOWER(id_number) = LOWER(:idNum)",
                         new MapSqlParameterSource("lid", req.getLibraryId()).addValue("idNum", req.getCollegeIdNumber())
                 );
-            } catch (Exception ignored) {}
-        }
+            }
+        } catch (Exception ignored) {}
 
         // 7. Update database statuses to BOOKED
         jdbcTemplate.update("UPDATE seat_desks SET current_status = 'BOOKED' WHERE id = :seatId",

@@ -278,6 +278,29 @@ export default function OwnerPortalPage() {
     kycDoc: '',
   });
 
+  // Owner Configurable Student KYC & Identity Requirements State
+  const [identityConfig, setIdentityConfig] = useState<{
+    fastPathZeroFields: boolean;
+    requirePhoneVerified: boolean;
+    requireAadhaarLast4: boolean;
+    requirePanMasked: boolean;
+    requireTargetExam: boolean;
+    requireCollegeName: boolean;
+    customFields: Array<{ name: string; label: string; type: string; required: boolean }>;
+  }>({
+    fastPathZeroFields: true,
+    requirePhoneVerified: true,
+    requireAadhaarLast4: false,
+    requirePanMasked: false,
+    requireTargetExam: false,
+    requireCollegeName: false,
+    customFields: []
+  });
+  const [newCustomFieldName, setNewCustomFieldName] = useState('');
+  const [newCustomFieldLabel, setNewCustomFieldLabel] = useState('');
+  const [newCustomFieldRequired, setNewCustomFieldRequired] = useState(true);
+  const [isSavingIdentityConfig, setIsSavingIdentityConfig] = useState(false);
+
   // Seat Level Overrides (for marking individual seats as Free, Sofa, Girls Only, Custom Type, or Custom Price)
   const [seatOverrides, setSeatOverrides] = useState<Record<string, {
     isFree?: boolean;
@@ -1427,6 +1450,24 @@ export default function OwnerPortalPage() {
       if (data?.success && data.data) {
         const normalized = normalizeLibraryData(data.data);
         setLibrary(normalized);
+        if (normalized?.id) {
+          api.get(`/api/v1/partner/libraries/${normalized.id}/identity-requirements`)
+            .then(({ data: idData }) => {
+              if (idData?.success && idData?.data) {
+                setIdentityConfig({
+                  fastPathZeroFields: Boolean(idData.data.fastPathZeroFields ?? idData.data.fast_path_zero_fields ?? true),
+                  requirePhoneVerified: Boolean(idData.data.requirePhoneVerified ?? idData.data.require_phone_verified ?? true),
+                  requireAadhaarLast4: Boolean(idData.data.requireAadhaarLast4 ?? idData.data.require_aadhaar_last4 ?? false),
+                  requirePanMasked: Boolean(idData.data.requirePanMasked ?? idData.data.require_pan_masked ?? false),
+                  requireTargetExam: Boolean(idData.data.requireTargetExam ?? idData.data.require_target_exam ?? false),
+                  requireCollegeName: Boolean(idData.data.requireCollegeName ?? idData.data.require_college_name ?? false),
+                  customFields: Array.isArray(idData.data.customFields || idData.data.custom_fields)
+                    ? (idData.data.customFields || idData.data.custom_fields)
+                    : []
+                });
+              }
+            }).catch(() => {});
+        }
         if (normalized?.approvalStatus === 'APPROVED') {
           setIsEditingWizard(false);
           setActiveTab((prev) => (prev === 'onboarding' ? 'crm' : prev));
@@ -1714,6 +1755,10 @@ export default function OwnerPortalPage() {
 
       if (res.data?.success && res.data.data) {
         console.log('Onboarding submitted successfully:', res.data.data);
+        const submittedLibId = res.data.data.id || library?.id;
+        if (submittedLibId) {
+          await api.put(`/api/v1/partner/onboarding/${submittedLibId}/identity-requirements`, identityConfig).catch(() => {});
+        }
       } else {
         throw new Error(res.data?.error || 'Failed to submit library to backend');
       }
@@ -3577,6 +3622,193 @@ export default function OwnerPortalPage() {
               </div>
             </div>
 
+            {/* ─── 8. Student Identity & KYC Requirements ─── */}
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
+                <span className="w-6 h-6 rounded-full bg-violet-600 text-white text-xs font-extrabold flex items-center justify-center">8</span>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                  Student Identity &amp; Verification Requirements (KYC)
+                </h3>
+              </div>
+
+              <div className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#12192c] space-y-4">
+                {/* Zero Fields Fast Path Option */}
+                <div
+                  onClick={() => {
+                    const next = !identityConfig.fastPathZeroFields;
+                    setIdentityConfig(prev => ({
+                      ...prev,
+                      fastPathZeroFields: next,
+                      requireAadhaarLast4: next ? false : prev.requireAadhaarLast4,
+                      requirePanMasked: next ? false : prev.requirePanMasked,
+                      requireTargetExam: next ? false : prev.requireTargetExam,
+                      requireCollegeName: next ? false : prev.requireCollegeName,
+                      customFields: next ? [] : prev.customFields
+                    }));
+                  }}
+                  className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
+                    identityConfig.fastPathZeroFields
+                      ? 'border-emerald-400 dark:border-emerald-700 bg-emerald-50/70 dark:bg-emerald-950/30'
+                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1220]'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={identityConfig.fastPathZeroFields}
+                      onChange={() => {}}
+                      className="w-5 h-5 accent-emerald-600 rounded cursor-pointer"
+                    />
+                    <div>
+                      <span className="text-xs font-bold text-slate-900 dark:text-white block">
+                        ⚡ Zero-Fields Fast Path (Recommended for Maximum Bookings)
+                      </span>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        Students book instantly using their default EduGlobin verified account (Name + Phone + Email). No extra KYC friction.
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                    identityConfig.fastPathZeroFields ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
+                  }`}>
+                    {identityConfig.fastPathZeroFields ? 'Active' : 'Custom KYC'}
+                  </span>
+                </div>
+
+                {/* Optional KYC Checkboxes */}
+                {!identityConfig.fastPathZeroFields && (
+                  <div className="space-y-3 pt-2">
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Select optional extra identity fields required before a student can confirm their desk:
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <label className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1220] cursor-pointer hover:border-violet-500/50 transition">
+                        <input
+                          type="checkbox"
+                          checked={identityConfig.requireAadhaarLast4}
+                          onChange={e => setIdentityConfig(prev => ({ ...prev, requireAadhaarLast4: e.target.checked, fastPathZeroFields: false }))}
+                          className="w-4 h-4 accent-violet-600 rounded"
+                        />
+                        <div className="text-xs">
+                          <span className="font-bold text-slate-800 dark:text-slate-200 block">🪪 Aadhaar Last 4 Digits</span>
+                          <span className="text-[10px] text-slate-500">Stored masked (XXXX-XXXX-1234) for privacy</span>
+                        </div>
+                      </label>
+
+                      <label className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1220] cursor-pointer hover:border-violet-500/50 transition">
+                        <input
+                          type="checkbox"
+                          checked={identityConfig.requirePanMasked}
+                          onChange={e => setIdentityConfig(prev => ({ ...prev, requirePanMasked: e.target.checked, fastPathZeroFields: false }))}
+                          className="w-4 h-4 accent-violet-600 rounded"
+                        />
+                        <div className="text-xs">
+                          <span className="font-bold text-slate-800 dark:text-slate-200 block">💳 PAN Card (Masked)</span>
+                          <span className="text-[10px] text-slate-500">e.g. ABCDE****F verification</span>
+                        </div>
+                      </label>
+
+                      <label className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1220] cursor-pointer hover:border-violet-500/50 transition">
+                        <input
+                          type="checkbox"
+                          checked={identityConfig.requireTargetExam}
+                          onChange={e => setIdentityConfig(prev => ({ ...prev, requireTargetExam: e.target.checked, fastPathZeroFields: false }))}
+                          className="w-4 h-4 accent-violet-600 rounded"
+                        />
+                        <div className="text-xs">
+                          <span className="font-bold text-slate-800 dark:text-slate-200 block">🎯 Target Competitive Exam</span>
+                          <span className="text-[10px] text-slate-500">e.g. UPSC, SSC CGL, Banking, NEET, GATE</span>
+                        </div>
+                      </label>
+
+                      <label className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1220] cursor-pointer hover:border-violet-500/50 transition">
+                        <input
+                          type="checkbox"
+                          checked={identityConfig.requireCollegeName}
+                          onChange={e => setIdentityConfig(prev => ({ ...prev, requireCollegeName: e.target.checked, fastPathZeroFields: false }))}
+                          className="w-4 h-4 accent-violet-600 rounded"
+                        />
+                        <div className="text-xs">
+                          <span className="font-bold text-slate-800 dark:text-slate-200 block">🏫 College / University Name</span>
+                          <span className="text-[10px] text-slate-500">e.g. SGSITS, DAVV, IIT Indore</span>
+                        </div>
+                      </label>
+                    </div>
+
+                    {/* Custom Dynamic Fields Builder */}
+                    <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                          ✨ Custom Identity Fields (Optional)
+                        </h4>
+                        <span className="text-[10px] text-slate-400">
+                          {identityConfig.customFields.length} custom field(s) configured
+                        </span>
+                      </div>
+
+                      {identityConfig.customFields.map((cf, cIdx) => (
+                        <div key={cIdx} className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-slate-800 dark:text-slate-200">{cf.label}</span>
+                            <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-mono text-slate-500">
+                              {cf.name} · {cf.type}
+                            </span>
+                            {cf.required && (
+                              <span className="text-[10px] text-rose-500 font-bold">Required</span>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setIdentityConfig(prev => ({
+                              ...prev,
+                              customFields: prev.customFields.filter((_, i) => i !== cIdx)
+                            }))}
+                            className="text-slate-400 hover:text-rose-500 font-bold p-1"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Field Label (e.g. Roll No / Vehicle No)"
+                          value={newCustomFieldLabel}
+                          onChange={e => {
+                            setNewCustomFieldLabel(e.target.value);
+                            setNewCustomFieldName(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '_'));
+                          }}
+                          className="flex-1 p-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1220] text-xs"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!newCustomFieldLabel.trim()) return;
+                            const key = newCustomFieldName.trim() || newCustomFieldLabel.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+                            setIdentityConfig(prev => ({
+                              ...prev,
+                              fastPathZeroFields: false,
+                              customFields: [
+                                ...prev.customFields,
+                                { name: key, label: newCustomFieldLabel.trim(), type: 'text', required: newCustomFieldRequired }
+                              ]
+                            }));
+                            setNewCustomFieldLabel('');
+                            setNewCustomFieldName('');
+                          }}
+                          className="px-3 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs shadow cursor-pointer"
+                        >
+                          + Add Field
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <button
               type="submit"
               className="w-full py-4 rounded-2xl bg-violet-600 hover:bg-violet-500 text-white font-extrabold text-sm transition shadow-lg shadow-violet-500/25 flex items-center justify-center gap-2 cursor-pointer mt-6"
@@ -4619,6 +4851,219 @@ export default function OwnerPortalPage() {
                 </div>
               </div>
             )}
+            {/* 🆔 OPERATIONAL STUDENT IDENTITY & KYC POLICY CARD */}
+            <div className="rounded-3xl border border-slate-200 dark:border-slate-800/80 bg-white dark:bg-[#0c1220] p-6 shadow-sm space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xl">
+                    🪪
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white font-headers">
+                      Student Identity &amp; Verification Requirements (KYC Policy)
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Configure which verification fields students must provide before checking out a seat in your library.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  disabled={isSavingIdentityConfig || !library?.id}
+                  onClick={async () => {
+                    if (!library?.id) return;
+                    setIsSavingIdentityConfig(true);
+                    try {
+                      const { data } = await api.put(`/api/v1/partner/libraries/${library.id}/identity-requirements`, identityConfig);
+                      if (data?.success) {
+                        alert('✅ Student Identity & KYC Requirements updated successfully!');
+                      } else {
+                        alert(data?.message || 'Failed to save identity requirements.');
+                      }
+                    } catch (err: any) {
+                      alert(err?.response?.data?.message || err?.message || 'Error saving identity requirements.');
+                    } finally {
+                      setIsSavingIdentityConfig(false);
+                    }
+                  }}
+                  className="px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-extrabold text-xs shadow-md shadow-violet-500/20 transition cursor-pointer flex items-center justify-center gap-2 self-start sm:self-auto shrink-0"
+                >
+                  {isSavingIdentityConfig ? 'Saving...' : '💾 Save Identity Policy'}
+                </button>
+              </div>
+
+              {/* Zero Fields Fast Path Option */}
+              <div
+                onClick={() => {
+                  const next = !identityConfig.fastPathZeroFields;
+                  setIdentityConfig(prev => ({
+                    ...prev,
+                    fastPathZeroFields: next,
+                    requireAadhaarLast4: next ? false : prev.requireAadhaarLast4,
+                    requirePanMasked: next ? false : prev.requirePanMasked,
+                    requireTargetExam: next ? false : prev.requireTargetExam,
+                    requireCollegeName: next ? false : prev.requireCollegeName,
+                    customFields: next ? [] : prev.customFields
+                  }));
+                }}
+                className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
+                  identityConfig.fastPathZeroFields
+                    ? 'border-emerald-400 dark:border-emerald-700 bg-emerald-50/70 dark:bg-emerald-950/30'
+                    : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#12192c]'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={identityConfig.fastPathZeroFields}
+                    onChange={() => {}}
+                    className="w-5 h-5 accent-emerald-600 rounded cursor-pointer"
+                  />
+                  <div>
+                    <span className="text-xs font-bold text-slate-900 dark:text-white block">
+                      ⚡ Zero-Fields Fast Path (Recommended for Maximum Bookings)
+                    </span>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Students book instantly using their default EduGlobin verified account (Name + Phone + Email). No extra KYC friction.
+                    </p>
+                  </div>
+                </div>
+                <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                  identityConfig.fastPathZeroFields ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
+                }`}>
+                  {identityConfig.fastPathZeroFields ? 'Active' : 'Custom KYC'}
+                </span>
+              </div>
+
+              {/* Optional KYC Checkboxes */}
+              {!identityConfig.fastPathZeroFields && (
+                <div className="space-y-4 pt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#12192c] cursor-pointer hover:border-violet-500/50 transition">
+                      <input
+                        type="checkbox"
+                        checked={identityConfig.requireAadhaarLast4}
+                        onChange={e => setIdentityConfig(prev => ({ ...prev, requireAadhaarLast4: e.target.checked, fastPathZeroFields: false }))}
+                        className="w-4 h-4 accent-violet-600 rounded"
+                      />
+                      <div className="text-xs">
+                        <span className="font-bold text-slate-800 dark:text-slate-200 block">🪪 Aadhaar Last 4 Digits</span>
+                        <span className="text-[10px] text-slate-500">Stored masked (XXXX-XXXX-1234) for privacy</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#12192c] cursor-pointer hover:border-violet-500/50 transition">
+                      <input
+                        type="checkbox"
+                        checked={identityConfig.requirePanMasked}
+                        onChange={e => setIdentityConfig(prev => ({ ...prev, requirePanMasked: e.target.checked, fastPathZeroFields: false }))}
+                        className="w-4 h-4 accent-violet-600 rounded"
+                      />
+                      <div className="text-xs">
+                        <span className="font-bold text-slate-800 dark:text-slate-200 block">💳 PAN Card (Masked)</span>
+                        <span className="text-[10px] text-slate-500">e.g. ABCDE****F verification</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#12192c] cursor-pointer hover:border-violet-500/50 transition">
+                      <input
+                        type="checkbox"
+                        checked={identityConfig.requireTargetExam}
+                        onChange={e => setIdentityConfig(prev => ({ ...prev, requireTargetExam: e.target.checked, fastPathZeroFields: false }))}
+                        className="w-4 h-4 accent-violet-600 rounded"
+                      />
+                      <div className="text-xs">
+                        <span className="font-bold text-slate-800 dark:text-slate-200 block">🎯 Target Competitive Exam</span>
+                        <span className="text-[10px] text-slate-500">e.g. UPSC, SSC CGL, Banking, NEET, GATE</span>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#12192c] cursor-pointer hover:border-violet-500/50 transition">
+                      <input
+                        type="checkbox"
+                        checked={identityConfig.requireCollegeName}
+                        onChange={e => setIdentityConfig(prev => ({ ...prev, requireCollegeName: e.target.checked, fastPathZeroFields: false }))}
+                        className="w-4 h-4 accent-violet-600 rounded"
+                      />
+                      <div className="text-xs">
+                        <span className="font-bold text-slate-800 dark:text-slate-200 block">🏫 College / University Name</span>
+                        <span className="text-[10px] text-slate-500">e.g. SGSITS, DAVV, IIT Indore</span>
+                      </div>
+                    </label>
+                  </div>
+
+                  {/* Custom Dynamic Fields Builder */}
+                  <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        ✨ Custom Identity Fields (Optional)
+                      </h4>
+                      <span className="text-[10px] text-slate-400">
+                        {identityConfig.customFields.length} custom field(s) configured
+                      </span>
+                    </div>
+
+                    {identityConfig.customFields.map((cf, cIdx) => (
+                      <div key={cIdx} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-[#12192c] border border-slate-200 dark:border-slate-800 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-800 dark:text-slate-200">{cf.label}</span>
+                          <span className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-[10px] font-mono text-slate-600 dark:text-slate-400">
+                            {cf.name} · {cf.type}
+                          </span>
+                          {cf.required && (
+                            <span className="text-[10px] text-rose-500 font-bold">Required</span>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIdentityConfig(prev => ({
+                            ...prev,
+                            customFields: prev.customFields.filter((_, i) => i !== cIdx)
+                          }))}
+                          className="text-slate-400 hover:text-rose-500 font-bold p-1"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Field Label (e.g. Roll No / Vehicle No)"
+                        value={newCustomFieldLabel}
+                        onChange={e => {
+                          setNewCustomFieldLabel(e.target.value);
+                          setNewCustomFieldName(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '_'));
+                        }}
+                        className="flex-1 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#12192c] text-xs"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!newCustomFieldLabel.trim()) return;
+                          const key = newCustomFieldName.trim() || newCustomFieldLabel.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+                          setIdentityConfig(prev => ({
+                            ...prev,
+                            fastPathZeroFields: false,
+                            customFields: [
+                              ...prev.customFields,
+                              { name: key, label: newCustomFieldLabel.trim(), type: 'text', required: newCustomFieldRequired }
+                            ]
+                          }));
+                          setNewCustomFieldLabel('');
+                          setNewCustomFieldName('');
+                        }}
+                        className="px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs shadow cursor-pointer"
+                      >
+                        + Add Field
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

@@ -99,6 +99,36 @@ export default function LibraryDetailPage() {
   // Real-time seat count per shift (replaces dummy freeCount)
   const [shiftFreeSeats, setShiftFreeSeats] = useState<Record<string, number>>({});
 
+  // Dynamic Identity & Configurable KYC Requirements State
+  const [identityRequirements, setIdentityRequirements] = useState<{
+    fastPathZeroFields?: boolean;
+    requirePhoneVerified?: boolean;
+    requireAadhaarLast4?: boolean;
+    requirePanMasked?: boolean;
+    requireTargetExam?: boolean;
+    requireCollegeName?: boolean;
+    customFields?: Array<{ name: string; label: string; type: string; required: boolean }>;
+  } | null>(null);
+  const [showDynamicKycModal, setShowDynamicKycModal] = useState(false);
+  const [dynamicKycError, setDynamicKycError] = useState<string | null>(null);
+  const [dynamicKycForm, setDynamicKycForm] = useState<{
+    fullName: string;
+    phoneNumber: string;
+    aadhaarLast4: string;
+    panMasked: string;
+    targetExam: string;
+    collegeName: string;
+    customFields: Record<string, string>;
+  }>({
+    fullName: '',
+    phoneNumber: '',
+    aadhaarLast4: '',
+    panMasked: '',
+    targetExam: 'UPSC',
+    collegeName: '',
+    customFields: {}
+  });
+
   // Emergency VIP Guest Seat Modal State
   const [showEmergencyGuestModal, setShowEmergencyGuestModal] = useState(false);
   const [emergencyGuestSeat, setEmergencyGuestSeat] = useState<Seat | null>(null);
@@ -120,6 +150,10 @@ export default function LibraryDetailPage() {
       branchDepartment: 'Emergency VIP Guest'
     });
   };
+
+  const libCat = (library?.libraryCategory || library?.library_category || 'PRIVATE').toUpperCase();
+  const isInstitute = libCat === 'INSTITUTE';
+  const isGovernment = libCat === 'GOVERNMENT';
 
   // Custom time slot mode (for non-Institute libraries)
   const [timeMode, setTimeMode] = useState<'SHIFT' | 'CUSTOM'>('SHIFT');
@@ -790,6 +824,38 @@ export default function LibraryDetailPage() {
               aadhaarLast4: prof.govt_id_last4 || prev.aadhaarLast4,
             }));
           }
+          if (prof.masked_aadhaar || prof.masked_pan || prof.target_exam || prof.custom_identity_fields || prof.full_name || prof.phone_number) {
+            setDynamicKycForm(prev => ({
+              ...prev,
+              fullName: prof.full_name || prev.fullName,
+              phoneNumber: prof.phone_number || prev.phoneNumber,
+              aadhaarLast4: prof.masked_aadhaar ? prof.masked_aadhaar.replace(/\D/g, '').slice(-4) : prev.aadhaarLast4,
+              panMasked: prof.masked_pan || prev.panMasked,
+              targetExam: prof.target_exam || prev.targetExam,
+              collegeName: prof.branch || prev.collegeName,
+              customFields: (typeof prof.custom_identity_fields === 'object' && prof.custom_identity_fields) ? prof.custom_identity_fields : prev.customFields
+            }));
+          }
+        }
+      })
+      .catch(() => {});
+
+    // Fetch dynamic identity requirements configured by this library
+    api.get(`/api/v1/libraries/${id}/identity-requirements`)
+      .then(({ data }) => {
+        if (data?.success && data?.data) {
+          const cfg = data.data;
+          setIdentityRequirements({
+            fastPathZeroFields: Boolean(cfg.fastPathZeroFields ?? cfg.fast_path_zero_fields ?? true),
+            requirePhoneVerified: Boolean(cfg.requirePhoneVerified ?? cfg.require_phone_verified ?? true),
+            requireAadhaarLast4: Boolean(cfg.requireAadhaarLast4 ?? cfg.require_aadhaar_last4 ?? false),
+            requirePanMasked: Boolean(cfg.requirePanMasked ?? cfg.require_pan_masked ?? false),
+            requireTargetExam: Boolean(cfg.requireTargetExam ?? cfg.require_target_exam ?? false),
+            requireCollegeName: Boolean(cfg.requireCollegeName ?? cfg.require_college_name ?? false),
+            customFields: Array.isArray(cfg.customFields || cfg.custom_fields)
+              ? (cfg.customFields || cfg.custom_fields)
+              : []
+          });
         }
       })
       .catch(() => {});
@@ -800,6 +866,12 @@ export default function LibraryDetailPage() {
         const metaGender = (session.user.user_metadata?.gender || '').toUpperCase();
         if (metaGender === 'MALE' || metaGender === 'FEMALE' || metaGender === 'OTHER') {
           setInstituteForm(prev => ({ ...prev, gender: metaGender as any }));
+        }
+        if (session.user.user_metadata?.full_name) {
+          setDynamicKycForm(prev => ({ ...prev, fullName: prev.fullName || session.user.user_metadata.full_name }));
+        }
+        if (session.user.phone) {
+          setDynamicKycForm(prev => ({ ...prev, phoneNumber: prev.phoneNumber || session.user.phone || '' }));
         }
       }
     });
@@ -816,6 +888,11 @@ export default function LibraryDetailPage() {
       if (savedGovt) {
         const parsedGovt = JSON.parse(savedGovt);
         if (parsedGovt) setGovtForm((prev) => ({ ...prev, ...parsedGovt }));
+      }
+      const savedKyc = localStorage.getItem(`student_kyc_info_${id}`);
+      if (savedKyc) {
+        const parsedKyc = JSON.parse(savedKyc);
+        if (parsedKyc) setDynamicKycForm((prev) => ({ ...prev, ...parsedKyc }));
       }
     } catch (e) {}
   }, [id]);
@@ -907,26 +984,58 @@ export default function LibraryDetailPage() {
       } catch (e) {}
     }
 
-    // ── GOVERNMENT: Require name + Aadhaar last 4 + exam target
-    const govtName = overrides?.fullName || govtForm.fullName;
-    const govtAadhaar = overrides?.aadhaarLast4 || govtForm.aadhaarLast4;
+    // ── GOVERNMENT & PRIVATE: Dynamic KYC Requirements vs Zero-Fields Fast Path
+    let dynamicName = overrides?.fullName || dynamicKycForm.fullName || govtForm.fullName || session?.user?.user_metadata?.full_name || '';
+    let dynamicPhone = overrides?.phoneNumber || dynamicKycForm.phoneNumber || session?.user?.phone || '';
+    let dynamicAadhaar = overrides?.aadhaarLast4 || dynamicKycForm.aadhaarLast4 || govtForm.aadhaarLast4 || (savedProfile?.masked_aadhaar ? savedProfile.masked_aadhaar.replace(/\D/g, '').slice(-4) : '');
+    let dynamicPan = overrides?.panMasked || dynamicKycForm.panMasked || savedProfile?.masked_pan || '';
+    let dynamicExam = overrides?.targetExam || dynamicKycForm.targetExam || govtForm.targetExam || savedProfile?.target_exam || '';
+    let dynamicCollege = overrides?.collegeName || dynamicKycForm.collegeName || savedProfile?.branch || '';
+    let dynamicCustom = overrides?.customFields || dynamicKycForm.customFields || savedProfile?.custom_identity_fields || {};
 
-    if (isGovernment && (!govtName || !govtAadhaar)) {
-      setShowGovtModal(true);
-      return;
-    }
+    if (!isInstitute) {
+      const isFastPath = identityRequirements
+        ? (identityRequirements.fastPathZeroFields !== false && !identityRequirements.requireAadhaarLast4 && !identityRequirements.requirePanMasked && !identityRequirements.requireTargetExam && !identityRequirements.requireCollegeName && (!identityRequirements.customFields || identityRequirements.customFields.length === 0))
+        : !isGovernment;
 
-    if (isGovernment && govtName && govtAadhaar) {
-      try {
-        const toSave = {
-          fullName: govtName,
-          aadhaarLast4: govtAadhaar,
-          voterIdNumber: overrides?.voterIdNumber || govtForm.voterIdNumber,
-          city: overrides?.city || govtForm.city,
-          targetExam: overrides?.targetExam || govtForm.targetExam,
-        };
-        localStorage.setItem('student_govt_info_global', JSON.stringify(toSave));
-      } catch (e) {}
+      if (!isFastPath) {
+        const reqAadhaar = Boolean(identityRequirements?.requireAadhaarLast4 || (isGovernment && !identityRequirements));
+        const reqPan = Boolean(identityRequirements?.requirePanMasked);
+        const reqExam = Boolean(identityRequirements?.requireTargetExam || (isGovernment && !identityRequirements));
+        const reqCollege = Boolean(identityRequirements?.requireCollegeName);
+        const reqCustom = identityRequirements?.customFields || [];
+
+        const isMissingAadhaar = reqAadhaar && (!dynamicAadhaar || dynamicAadhaar.length !== 4);
+        const isMissingPan = reqPan && !dynamicPan.trim();
+        const isMissingExam = reqExam && !dynamicExam.trim();
+        const isMissingCollege = reqCollege && !dynamicCollege.trim();
+        const isMissingCustom = reqCustom.some(f => f.required && (!dynamicCustom || !dynamicCustom[f.name]));
+
+        if (isMissingAadhaar || isMissingPan || isMissingExam || isMissingCollege || isMissingCustom) {
+          setShowDynamicKycModal(true);
+          return;
+        }
+
+        try {
+          const toSave = {
+            fullName: dynamicName,
+            phoneNumber: dynamicPhone,
+            aadhaarLast4: dynamicAadhaar,
+            panMasked: dynamicPan,
+            targetExam: dynamicExam,
+            collegeName: dynamicCollege,
+            customFields: dynamicCustom
+          };
+          localStorage.setItem(`student_kyc_info_${id}`, JSON.stringify(toSave));
+          if (isGovernment) {
+            localStorage.setItem('student_govt_info_global', JSON.stringify({
+              fullName: dynamicName,
+              aadhaarLast4: dynamicAadhaar,
+              targetExam: dynamicExam
+            }));
+          }
+        } catch (e) {}
+      }
     }
 
     setCheckoutLoading(true);
@@ -958,10 +1067,13 @@ export default function LibraryDetailPage() {
         studentAge: overrides?.studentAge || instituteForm.studentAge,
         degreeProgram: overrides?.degreeProgram || instituteForm.degreeProgram,
         branchDepartment: overrides?.branchDepartment || instituteForm.branchDepartment,
-        // Govt-specific
-        govtName: isGovernment ? (govtName || undefined) : undefined,
-        aadhaarLast4: isGovernment ? (govtAadhaar || undefined) : undefined,
-        targetExam: isGovernment ? (overrides?.targetExam || govtForm.targetExam) : undefined,
+        // Dynamic KYC & Govt fields
+        govtName: dynamicName || undefined,
+        phoneNumber: dynamicPhone || undefined,
+        aadhaarLast4: dynamicAadhaar || undefined,
+        panMasked: dynamicPan || undefined,
+        targetExam: dynamicExam || undefined,
+        customFields: dynamicCustom && Object.keys(dynamicCustom).length > 0 ? dynamicCustom : undefined,
       });
 
       if (data?.data?.bookingId) {
@@ -2421,61 +2533,111 @@ export default function LibraryDetailPage() {
         </div>
       )}
 
-      {/* ── GOVERNMENT LIBRARY STUDENT IDENTITY MODAL ── */}
-      {showGovtModal && (
+      {/* ── DYNAMIC STUDENT IDENTITY & KYC REQUIREMENTS MODAL ── */}
+      {(showDynamicKycModal || showGovtModal) && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-[#0c1120] border border-amber-500/30 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-[#0c1120] border border-violet-500/30 dark:border-violet-500/20 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
             <button
-              onClick={() => setShowGovtModal(false)}
+              onClick={() => {
+                setShowDynamicKycModal(false);
+                setShowGovtModal(false);
+              }}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white text-lg font-bold"
             >
               ✕
             </button>
 
             <div className="text-center mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto mb-3 text-2xl">
-                🏛️
+              <div className="w-12 h-12 rounded-2xl bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center mx-auto mb-3 text-2xl">
+                {isGovernment ? '🏛️' : '🪪'}
               </div>
               <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">
-                Government Library — Student Identity
+                {isGovernment ? 'Government Library — Student Identity' : 'Student Verification & Identity'}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                Government public libraries require basic identity verification. Your info is saved for future bookings.
+                {library?.name || 'This library'} requires basic verification before confirming your desk.
               </p>
             </div>
 
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                setGovtError(null);
-                if (!govtForm.fullName.trim() || !govtForm.aadhaarLast4.trim()) {
-                  setGovtError('Name and Aadhaar last 4 digits are required.');
+                setDynamicKycError(null);
+                const reqAadhaar = Boolean(identityRequirements?.requireAadhaarLast4 || isGovernment);
+                const reqPan = Boolean(identityRequirements?.requirePanMasked);
+                const reqExam = Boolean(identityRequirements?.requireTargetExam || isGovernment);
+                const reqCollege = Boolean(identityRequirements?.requireCollegeName);
+                const reqCustom = identityRequirements?.customFields || [];
+
+                if (reqAadhaar) {
+                  const a4 = dynamicKycForm.aadhaarLast4.trim();
+                  if (!a4 || a4.length !== 4 || !/^\d{4}$/.test(a4)) {
+                    setDynamicKycError('Please enter exactly the last 4 digits of your Aadhaar card.');
+                    return;
+                  }
+                }
+                if (reqPan && !dynamicKycForm.panMasked.trim()) {
+                  setDynamicKycError('Please enter your PAN details.');
                   return;
                 }
-                if (govtForm.aadhaarLast4.trim().length !== 4 || !/^\d{4}$/.test(govtForm.aadhaarLast4.trim())) {
-                  setGovtError('Please enter exactly the last 4 digits of your Aadhaar card.');
+                if (reqExam && !dynamicKycForm.targetExam.trim()) {
+                  setDynamicKycError('Please select or specify your target exam.');
                   return;
                 }
+                if (reqCollege && !dynamicKycForm.collegeName.trim()) {
+                  setDynamicKycError('Please enter your College / University name.');
+                  return;
+                }
+                for (const cf of reqCustom) {
+                  if (cf.required && !dynamicKycForm.customFields[cf.name]?.trim()) {
+                    setDynamicKycError(`Please provide ${cf.label}.`);
+                    return;
+                  }
+                }
+
+                setShowDynamicKycModal(false);
                 setShowGovtModal(false);
-                handleCheckout(govtForm);
+                handleCheckout({
+                  fullName: dynamicKycForm.fullName,
+                  phoneNumber: dynamicKycForm.phoneNumber,
+                  aadhaarLast4: dynamicKycForm.aadhaarLast4,
+                  panMasked: dynamicKycForm.panMasked,
+                  targetExam: dynamicKycForm.targetExam,
+                  collegeName: dynamicKycForm.collegeName,
+                  customFields: dynamicKycForm.customFields
+                });
               }}
-              className="space-y-4 text-xs"
+              className="space-y-4 text-xs max-h-[70vh] overflow-y-auto pr-1"
             >
               <div>
                 <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Full Name (as on Aadhaar) *
+                  Full Name *
                 </label>
                 <input
                   type="text"
                   required
-                  value={govtForm.fullName}
-                  onChange={e => setGovtForm({ ...govtForm, fullName: e.target.value })}
+                  value={dynamicKycForm.fullName}
+                  onChange={e => setDynamicKycForm({ ...dynamicKycForm, fullName: e.target.value })}
                   placeholder="e.g. Ramesh Kumar Sharma"
                   className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white text-sm font-semibold"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Mobile Phone Number *
+                </label>
+                <input
+                  type="tel"
+                  required
+                  value={dynamicKycForm.phoneNumber}
+                  onChange={e => setDynamicKycForm({ ...dynamicKycForm, phoneNumber: e.target.value })}
+                  placeholder="e.g. 9876543210"
+                  className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white font-mono text-sm"
+                />
+              </div>
+
+              {(identityRequirements?.requireAadhaarLast4 || isGovernment) && (
                 <div>
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Aadhaar Last 4 Digits *
@@ -2485,70 +2647,99 @@ export default function LibraryDetailPage() {
                     required
                     maxLength={4}
                     pattern="\d{4}"
-                    value={govtForm.aadhaarLast4}
-                    onChange={e => setGovtForm({ ...govtForm, aadhaarLast4: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+                    value={dynamicKycForm.aadhaarLast4}
+                    onChange={e => setDynamicKycForm({ ...dynamicKycForm, aadhaarLast4: e.target.value.replace(/\D/g, '').slice(0, 4) })}
                     placeholder="XXXX"
                     className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white font-mono text-base text-center tracking-widest"
                   />
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">Stored masked as XXXX-XXXX-1234 for privacy</span>
                 </div>
+              )}
 
+              {identityRequirements?.requirePanMasked && (
                 <div>
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Your City
+                    PAN Card (Masked) *
                   </label>
                   <input
                     type="text"
-                    value={govtForm.city}
-                    onChange={e => setGovtForm({ ...govtForm, city: e.target.value })}
-                    placeholder="e.g. Indore"
+                    required
+                    maxLength={10}
+                    value={dynamicKycForm.panMasked}
+                    onChange={e => setDynamicKycForm({ ...dynamicKycForm, panMasked: e.target.value.toUpperCase() })}
+                    placeholder="ABCDE1234F"
+                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white font-mono text-sm uppercase"
+                  />
+                </div>
+              )}
+
+              {(identityRequirements?.requireTargetExam || isGovernment) && (
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Target Competitive Exam *
+                  </label>
+                  <select
+                    value={dynamicKycForm.targetExam}
+                    onChange={e => setDynamicKycForm({ ...dynamicKycForm, targetExam: e.target.value })}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white font-bold"
+                  >
+                    {['UPSC', 'SSC CGL', 'SSC CHSL', 'Banking (IBPS/SBI)', 'Railways (RRB)', 'State PSC', 'MPSC', 'RPSC', 'JPSC', 'Defence (NDA/CDS)', 'NEET', 'IIT-JEE', 'NET/JRF', 'GATE', 'CAT/MBA', 'Other'].map(exam => (
+                      <option key={exam} value={exam}>{exam}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {identityRequirements?.requireCollegeName && (
+                <div>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    College / University Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={dynamicKycForm.collegeName}
+                    onChange={e => setDynamicKycForm({ ...dynamicKycForm, collegeName: e.target.value })}
+                    placeholder="e.g. SGSITS, DAVV, IIT Indore"
                     className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white text-sm"
                   />
                 </div>
-              </div>
+              )}
 
-              <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Exam Preparing For
-                </label>
-                <select
-                  value={govtForm.targetExam}
-                  onChange={e => setGovtForm({ ...govtForm, targetExam: e.target.value })}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white font-bold"
-                >
-                  {['UPSC', 'SSC CGL', 'SSC CHSL', 'Banking (IBPS/SBI)', 'Railways (RRB)', 'State PSC', 'MPSC', 'RPSC', 'JPSC', 'Defence (NDA/CDS)', 'NET/JRF', 'GATE', 'CAT/MBA', 'Other'].map(exam => (
-                    <option key={exam} value={exam}>{exam}</option>
-                  ))}
-                </select>
-              </div>
+              {identityRequirements?.customFields && identityRequirements.customFields.map((cf, idx) => (
+                <div key={idx}>
+                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    {cf.label} {cf.required && '*'}
+                  </label>
+                  <input
+                    type={cf.type || 'text'}
+                    required={cf.required}
+                    value={dynamicKycForm.customFields[cf.name] || ''}
+                    onChange={e => setDynamicKycForm({
+                      ...dynamicKycForm,
+                      customFields: { ...dynamicKycForm.customFields, [cf.name]: e.target.value }
+                    })}
+                    placeholder={`Enter ${cf.label}`}
+                    className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white text-sm"
+                  />
+                </div>
+              ))}
 
-              <div>
-                <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Voter ID Number (optional)
-                </label>
-                <input
-                  type="text"
-                  value={govtForm.voterIdNumber}
-                  onChange={e => setGovtForm({ ...govtForm, voterIdNumber: e.target.value.toUpperCase() })}
-                  placeholder="e.g. MH/01/234/012345"
-                  className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white font-mono text-sm"
-                />
-              </div>
-
-              {govtError && (
+              {dynamicKycError && (
                 <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs font-semibold">
-                  {govtError}
+                  {dynamicKycError}
                 </div>
               )}
 
               <p className="text-[10px] text-slate-400 text-center">
-                🔒 Only the last 4 Aadhaar digits are collected. No full ID number stored. Data used only for government library access records.
+                🔒 Privacy-first verification: sensitive fields are stored masked to protect your identity.
               </p>
 
               <button
                 type="submit"
-                className="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-amber-500/20 transition cursor-pointer"
+                className="w-full py-3.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-extrabold text-xs shadow-lg shadow-violet-600/25 transition cursor-pointer"
               >
-                Confirm &amp; Continue to Booking →
+                Confirm Identity &amp; Continue to Booking →
               </button>
             </form>
           </div>

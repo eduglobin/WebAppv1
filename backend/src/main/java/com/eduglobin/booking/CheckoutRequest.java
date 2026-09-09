@@ -40,7 +40,37 @@ public class CheckoutRequest {
     // Student Gender for Reserved Seating Validation
     private String studentGender;
 
+    // Optional KYC & Dynamic Identity Fields (Govt / Private / Custom)
+    private String fullName;
+    private String phone;
+    private String aadhaarLast4;
+    private String panNumber;
+    private String targetExam;
+    private String collegeName;
+    private java.util.Map<String, Object> customFields;
+
     // Getters and Setters
+
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
+
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
+
+    public String getAadhaarLast4() { return aadhaarLast4; }
+    public void setAadhaarLast4(String aadhaarLast4) { this.aadhaarLast4 = aadhaarLast4; }
+
+    public String getPanNumber() { return panNumber; }
+    public void setPanNumber(String panNumber) { this.panNumber = panNumber; }
+
+    public String getTargetExam() { return targetExam; }
+    public void setTargetExam(String targetExam) { this.targetExam = targetExam; }
+
+    public String getCollegeName() { return collegeName; }
+    public void setCollegeName(String collegeName) { this.collegeName = collegeName; }
+
+    public java.util.Map<String, Object> getCustomFields() { return customFields; }
+    public void setCustomFields(java.util.Map<String, Object> customFields) { this.customFields = customFields; }
 
     public String getStudentGender() { return studentGender; }
     public void setStudentGender(String studentGender) { this.studentGender = studentGender; }

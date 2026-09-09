@@ -40,13 +40,17 @@ public class DeskService {
 
         String profileSql = "SELECT slp.id AS profile_id, slp.student_id, slp.library_id, " +
                 "slp.institute_email, slp.institute_id_number, slp.branch, slp.year, slp.gender, " +
-                "p.full_name, p.phone, slp.institute_email AS account_email " +
+                "COALESCE(slp.full_name, p.full_name) as full_name, COALESCE(slp.phone_number, p.phone) as phone, " +
+                "slp.masked_aadhaar, slp.masked_pan, slp.target_exam, slp.custom_identity_fields, " +
+                "slp.institute_email AS account_email " +
                 "FROM student_library_profiles slp " +
                 "JOIN profiles p ON slp.student_id = p.id " +
                 "WHERE slp.library_id = :libId " +
                 "AND (LOWER(COALESCE(slp.institute_id_number, '')) = :q " +
                 "  OR LOWER(COALESCE(slp.institute_email, '')) = :q " +
+                "  OR LOWER(COALESCE(slp.phone_number, '')) = :q " +
                 "  OR LOWER(COALESCE(p.phone, '')) = :q " +
+                "  OR LOWER(COALESCE(slp.full_name, '')) LIKE :qLike " +
                 "  OR LOWER(COALESCE(p.full_name, '')) LIKE :qLike " +
                 "  OR CAST(slp.id AS text) = :q) " +
                 "LIMIT 1";
@@ -164,6 +168,10 @@ public class DeskService {
         studentProfile.put("gender", profile.get("gender"));
         studentProfile.put("branch", profile.get("branch"));
         studentProfile.put("year", profile.get("year"));
+        studentProfile.put("maskedAadhaar", profile.get("masked_aadhaar"));
+        studentProfile.put("maskedPan", profile.get("masked_pan"));
+        studentProfile.put("targetExam", profile.get("target_exam"));
+        studentProfile.put("customIdentityFields", profile.get("custom_identity_fields"));
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("studentProfile", studentProfile);
@@ -181,6 +189,9 @@ public class DeskService {
         response.put("gender", profile.get("gender"));
         response.put("branch", profile.get("branch"));
         response.put("year", profile.get("year"));
+        response.put("maskedAadhaar", profile.get("masked_aadhaar"));
+        response.put("maskedPan", profile.get("masked_pan"));
+        response.put("targetExam", profile.get("target_exam"));
         response.put("currentSeat", currentSeat);
         response.put("recentItems", recentItems);
         response.put("isNewToLibrary", false);

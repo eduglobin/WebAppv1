@@ -27,7 +27,9 @@ public class StudentLibraryProfileService {
 
         String sql = "SELECT slp.id, slp.student_id, slp.library_id, slp.library_category, " +
                 "slp.institute_email, slp.institute_id_number, slp.branch, slp.year, slp.gender, slp.institute_email_verified, " +
-                "slp.govt_id_type, slp.govt_id_last4, slp.is_claimed, slp.created_at " +
+                "slp.govt_id_type, slp.govt_id_last4, slp.phone_number, slp.masked_aadhaar, slp.masked_pan, slp.target_exam, " +
+                "COALESCE(slp.custom_identity_fields, '{}'::jsonb) as custom_identity_fields, slp.full_name, " +
+                "slp.is_claimed, slp.created_at " +
                 "FROM student_library_profiles slp " +
                 "WHERE slp.student_id = :studentUuid AND slp.library_id = :libraryId LIMIT 1";
 
@@ -94,11 +96,29 @@ public class StudentLibraryProfileService {
         }
 
         String gender = req.get("gender") != null ? req.get("gender").toString().toUpperCase() : null;
+        String fullName = req.get("fullName") != null ? req.get("fullName").toString() : (req.get("name") != null ? req.get("name").toString() : null);
+        String phone = req.get("phone") != null ? req.get("phone").toString() : (req.get("phoneNumber") != null ? req.get("phoneNumber").toString() : null);
+        String aadhaarLast4 = req.get("aadhaarLast4") != null ? req.get("aadhaarLast4").toString() : (req.get("govtIdLast4") != null ? req.get("govtIdLast4").toString() : null);
+        String maskedAadhaar = aadhaarLast4 != null && !aadhaarLast4.isBlank() ? "XXXX-XXXX-" + aadhaarLast4.trim() : (req.get("maskedAadhaar") != null ? req.get("maskedAadhaar").toString() : null);
+        String aadhaarHash = req.get("aadhaarHash") != null ? req.get("aadhaarHash").toString() : null;
+        String maskedPan = req.get("maskedPan") != null ? req.get("maskedPan").toString() : (req.get("panNumber") != null ? req.get("panNumber").toString() : null);
+        String targetExam = req.get("targetExam") != null ? req.get("targetExam").toString() : null;
+
+        String customFieldsJson = "{}";
+        if (req.get("customFields") instanceof Map || req.get("custom_identity_fields") instanceof Map) {
+            try {
+                customFieldsJson = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(
+                    req.get("customFields") != null ? req.get("customFields") : req.get("custom_identity_fields")
+                );
+            } catch (Exception ignored) {}
+        }
 
         String sql = "INSERT INTO student_library_profiles (" +
-                "student_id, library_id, library_category, institute_email, institute_id_number, branch, year, gender, govt_id_type, govt_id_last4" +
+                "student_id, library_id, library_category, institute_email, institute_id_number, branch, year, gender, govt_id_type, govt_id_last4, " +
+                "full_name, phone_number, masked_aadhaar, aadhaar_hash, masked_pan, target_exam, custom_identity_fields" +
                 ") VALUES (" +
-                ":studentUuid, :libraryId, :category, :instEmail, :instIdNum, :branch, :year, :gender, :govtIdType, :govtIdLast4" +
+                ":studentUuid, :libraryId, :category, :instEmail, :instIdNum, :branch, :year, :gender, :govtIdType, :govtIdLast4, " +
+                ":fullName, :phone, :maskedAadhaar, :aadhaarHash, :maskedPan, :targetExam, CAST(:customFields AS jsonb)" +
                 ") ON CONFLICT (student_id, library_id) DO UPDATE SET " +
                 "library_category = EXCLUDED.library_category, " +
                 "institute_email = COALESCE(EXCLUDED.institute_email, student_library_profiles.institute_email), " +
@@ -107,7 +127,14 @@ public class StudentLibraryProfileService {
                 "year = COALESCE(EXCLUDED.year, student_library_profiles.year), " +
                 "gender = COALESCE(EXCLUDED.gender, student_library_profiles.gender), " +
                 "govt_id_type = COALESCE(EXCLUDED.govt_id_type, student_library_profiles.govt_id_type), " +
-                "govt_id_last4 = COALESCE(EXCLUDED.govt_id_last4, student_library_profiles.govt_id_last4) RETURNING id";
+                "govt_id_last4 = COALESCE(EXCLUDED.govt_id_last4, student_library_profiles.govt_id_last4), " +
+                "full_name = COALESCE(EXCLUDED.full_name, student_library_profiles.full_name), " +
+                "phone_number = COALESCE(EXCLUDED.phone_number, student_library_profiles.phone_number), " +
+                "masked_aadhaar = COALESCE(EXCLUDED.masked_aadhaar, student_library_profiles.masked_aadhaar), " +
+                "aadhaar_hash = COALESCE(EXCLUDED.aadhaar_hash, student_library_profiles.aadhaar_hash), " +
+                "masked_pan = COALESCE(EXCLUDED.masked_pan, student_library_profiles.masked_pan), " +
+                "target_exam = COALESCE(EXCLUDED.target_exam, student_library_profiles.target_exam), " +
+                "custom_identity_fields = COALESCE(EXCLUDED.custom_identity_fields, student_library_profiles.custom_identity_fields) RETURNING id";
 
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("studentUuid", studentUuid)
@@ -119,7 +146,14 @@ public class StudentLibraryProfileService {
                 .addValue("year", year)
                 .addValue("gender", gender)
                 .addValue("govtIdType", req.get("govtIdType"))
-                .addValue("govtIdLast4", req.get("govtIdLast4"));
+                .addValue("govtIdLast4", aadhaarLast4)
+                .addValue("fullName", fullName)
+                .addValue("phone", phone)
+                .addValue("maskedAadhaar", maskedAadhaar)
+                .addValue("aadhaarHash", aadhaarHash)
+                .addValue("maskedPan", maskedPan)
+                .addValue("targetExam", targetExam)
+                .addValue("customFields", customFieldsJson);
 
         UUID profileId = jdbcTemplate.queryForObject(sql, params, UUID.class);
         return Map.of("id", profileId, "message", "Student library profile saved successfully.");
