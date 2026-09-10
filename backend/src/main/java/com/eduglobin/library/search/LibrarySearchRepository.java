@@ -22,7 +22,7 @@ public class LibrarySearchRepository {
         StringBuilder sql = new StringBuilder();
         MapSqlParameterSource params = new MapSqlParameterSource();
 
-        sql.append("SELECT l.id, l.name, l.locality, l.city, COALESCE(l.is_free, FALSE) as is_free, COALESCE(l.allow_visitor_passes, TRUE) as allow_visitor_passes, l.monthly_price, l.rating, l.girls_safety_score, l.ac_available, ");
+        sql.append("SELECT l.id, l.name, l.locality, l.city, COALESCE(l.address, '') as address, COALESCE(l.description, '') as description, COALESCE(l.is_free, FALSE) as is_free, COALESCE(l.allow_visitor_passes, TRUE) as allow_visitor_passes, l.monthly_price, l.rating, l.girls_safety_score, l.ac_available, ");
         sql.append("l.amenities, l.focused_exams, l.seating_type, l.has_girls_section, l.is_published, ");
         sql.append("ST_Y(l.geo_point::geometry) as lat, ST_X(l.geo_point::geometry) as lng, ");
         sql.append("COALESCE((SELECT COUNT(*) FROM seat_desks sd WHERE sd.library_id = l.id AND sd.current_status = 'AVAILABLE'), 0) as available_seats ");
@@ -37,6 +37,19 @@ public class LibrarySearchRepository {
 
         sql.append("FROM libraries l ");
         sql.append("WHERE (l.is_published = TRUE OR l.approval_status IN ('APPROVED', 'PENDING_APPROVAL', 'DRAFT') OR l.approval_status IS NULL) ");
+
+        // Name / Semantic Keyword Query search across Name, Locality, City, Address, Description
+        if (criteria.getQuery() != null && !criteria.getQuery().isBlank()) {
+            String q = criteria.getQuery().trim().toLowerCase();
+            sql.append("AND (");
+            sql.append("  LOWER(l.name) LIKE :queryPattern OR ");
+            sql.append("  LOWER(l.locality) LIKE :queryPattern OR ");
+            sql.append("  LOWER(l.city) LIKE :queryPattern OR ");
+            sql.append("  LOWER(COALESCE(l.address, '')) LIKE :queryPattern OR ");
+            sql.append("  LOWER(COALESCE(l.description, '')) LIKE :queryPattern ");
+            sql.append(") ");
+            params.addValue("queryPattern", "%" + q + "%");
+        }
 
         if (criteria.getLat() != null && criteria.getLng() != null && criteria.getRadiusKm() != null) {
             sql.append("AND ST_DWithin(l.geo_point, ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography, :radiusMeters) ");
@@ -100,6 +113,8 @@ public class LibrarySearchRepository {
                 .name(rs.getString("name"))
                 .locality(rs.getString("locality"))
                 .city(rs.getString("city"))
+                .address(rs.getString("address"))
+                .description(rs.getString("description"))
                 .isFree(rs.getBoolean("is_free"))
                 .allowVisitorPasses(rs.getBoolean("allow_visitor_passes"))
                 .distanceM(rs.getDouble("distance_m"))

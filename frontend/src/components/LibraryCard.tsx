@@ -18,6 +18,7 @@ export interface LibraryItem {
   matchScore?: number;
   availableSeats?: number;
   isFree?: boolean;
+  semanticMatchReason?: string;
 }
 
 interface LibraryCardProps {
@@ -95,10 +96,11 @@ export default function LibraryCard({ library, matchExplanation }: LibraryCardPr
           </div>
         )}
 
-        {/* Match Explanation (Day 12 Gemini placeholder) */}
-        {matchExplanation && (
-          <p className="text-xs text-violet-600 dark:text-violet-300 mt-2.5 italic bg-violet-500/5 dark:bg-violet-500/10 p-2 rounded-lg border border-violet-500/20">
-            "{matchExplanation}"
+        {/* Match Explanation / Semantic Match Reason */}
+        {(library.semanticMatchReason || matchExplanation) && (
+          <p className="text-xs text-violet-600 dark:text-violet-300 mt-2.5 font-medium bg-violet-500/5 dark:bg-violet-500/10 p-2 rounded-lg border border-violet-500/20 flex items-center gap-1.5">
+            <span>🧠</span>
+            <span>{library.semanticMatchReason || matchExplanation}</span>
           </p>
         )}
       </div>

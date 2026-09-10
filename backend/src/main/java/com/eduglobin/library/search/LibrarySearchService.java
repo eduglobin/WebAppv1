@@ -26,6 +26,8 @@ public class LibrarySearchService {
                     double distanceKm = candidate.getDistanceM() != null ? candidate.getDistanceM() / 1000.0 : 0.0;
                     distanceKm = Math.round(distanceKm * 100.0) / 100.0;
 
+                    String semanticReason = scoringService.generateSemanticReason(candidate, criteria, distanceKm);
+
                     return ScoredLibraryDto.builder()
                             .id(candidate.getId())
                             .name(candidate.getName())
@@ -46,6 +48,7 @@ public class LibrarySearchService {
                             .lng(candidate.getLng())
                             .availableSeats(candidate.getAvailableSeats())
                             .matchScore(score)
+                            .semanticMatchReason(semanticReason)
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -53,7 +56,11 @@ public class LibrarySearchService {
         String sortBy = criteria.getSortBy() != null ? criteria.getSortBy().toUpperCase() : "RELEVANCE";
         switch (sortBy) {
             case "DISTANCE":
+            case "NEAREST":
                 scoredLibraries.sort(Comparator.comparing(ScoredLibraryDto::getDistanceKm));
+                break;
+            case "NAME":
+                scoredLibraries.sort(Comparator.comparing(ScoredLibraryDto::getName, String.CASE_INSENSITIVE_ORDER));
                 break;
             case "PRICE_ASC":
                 scoredLibraries.sort(Comparator.comparing(ScoredLibraryDto::getMonthlyPrice));

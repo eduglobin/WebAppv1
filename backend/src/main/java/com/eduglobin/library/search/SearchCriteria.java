@@ -11,6 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SearchCriteria {
+    private String query;         // Name or semantic query (e.g. "Saraswati Library", "Quiet AC study space for UPSC")
     private Double lat;
     private Double lng;
     private Double radiusKm;

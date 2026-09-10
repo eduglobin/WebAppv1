@@ -34,6 +34,7 @@ export default function SearchPage() {
 
   // ── Search Mode ──────────────────────────────────────────────────────────
   const [searchMode, setSearchMode] = useState<SearchMode>('GPS');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [cityInput, setCityInput] = useState('');
 
   // ── GPS Location ─────────────────────────────────────────────────────────
@@ -91,24 +92,22 @@ export default function SearchPage() {
     try {
       const params = new URLSearchParams();
 
+      if (searchQuery.trim()) {
+        params.append('query', searchQuery.trim());
+      }
+
       if (searchMode === 'GPS') {
-        if (lat === null || lng === null) {
-          setLibraries([]);
-          setLoading(false);
-          return;
+        if (lat !== null && lng !== null) {
+          params.append('lat', lat.toString());
+          params.append('lng', lng.toString());
+          params.append('radiusKm', radiusKm.toString());
         }
-        params.append('lat', lat.toString());
-        params.append('lng', lng.toString());
-        params.append('radiusKm', radiusKm.toString());
       } else {
         // City-based search
-        if (!cityInput.trim()) {
-          setLibraries([]);
-          setLoading(false);
-          return;
+        if (cityInput.trim()) {
+          params.append('city', cityInput.trim());
+          params.append('radiusKm', '9999'); // broad radius for city search
         }
-        params.append('city', cityInput.trim());
-        params.append('radiusKm', '9999'); // broad radius for city search
       }
 
       params.append('maxMonthlyPrice', maxMonthlyPrice.toString());
@@ -151,12 +150,79 @@ export default function SearchPage() {
   };
 
   const canSearch =
+    searchQuery.trim().length >= 1 ||
     (searchMode === 'GPS' && gpsStatus === 'GRANTED' && lat !== null) ||
     (searchMode === 'CITY' && cityInput.trim().length >= 2);
 
   return (
     <div className="min-h-screen bg-[#f4f6fb] dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col transition-colors duration-300">
       <Navbar />
+
+      {/* ── TOP SEARCH BANNER (Name & Semantic AI Search) ── */}
+      <div className="bg-gradient-to-r from-violet-900 via-indigo-900 to-slate-900 text-white py-8 px-4 sm:px-6 lg:px-8 border-b border-violet-800/40 shadow-inner">
+        <div className="max-w-4xl mx-auto space-y-4">
+          <div className="text-center space-y-1">
+            <h1 className="text-2xl sm:text-3xl font-extrabold font-headers text-white flex items-center justify-center gap-2">
+              <span>🏛️</span>
+              <span>Find Libraries &amp; Verified Study Spaces</span>
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-300">
+              Search by library name, locality, or natural description (e.g. <em>"Saraswati Library"</em>, <em>"AC reading hall for UPSC in Bhawarkua"</em>)
+            </p>
+          </div>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              fetchLibraries();
+            }}
+            className="flex flex-col sm:flex-row gap-2 bg-white/10 p-2 rounded-2xl border border-white/20 backdrop-blur-md shadow-xl"
+          >
+            <div className="relative flex-1">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-base">🔎</span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search library name, exam (UPSC/NEET), locality, or features..."
+                className="w-full pl-10 pr-4 py-3 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-semibold text-sm outline-none focus:ring-2 focus:ring-violet-400"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-extrabold text-sm shadow-lg shadow-violet-600/30 transition cursor-pointer shrink-0 flex items-center justify-center gap-2"
+            >
+              {loading ? 'Searching…' : '🔍 Search'}
+            </button>
+          </form>
+
+          {/* Quick Search Tag Pills */}
+          <div className="flex flex-wrap items-center justify-center gap-2 text-xs pt-1">
+            <span className="text-slate-400 font-bold uppercase text-[10px]">Popular Searches:</span>
+            {[
+              { label: '🎯 Nearest First', sort: 'DISTANCE', query: '' },
+              { label: '📚 Saraswati Library', sort: 'RELEVANCE', query: 'Saraswati' },
+              { label: '❄️ AC + UPSC Focus', sort: 'RELEVANCE', query: 'AC UPSC' },
+              { label: '🩷 Girls Safe Wing', sort: 'RELEVANCE', query: 'Girls Safe' },
+              { label: '💰 Free Study Pass', sort: 'RELEVANCE', query: 'Free' },
+            ].map((pill, idx) => (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  if (pill.query !== undefined) setSearchQuery(pill.query);
+                  if (pill.sort) setSortBy(pill.sort);
+                  setTimeout(() => fetchLibraries(), 50);
+                }}
+                className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold transition cursor-pointer text-xs"
+              >
+                {pill.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row gap-6">
 
@@ -438,12 +504,13 @@ export default function SearchPage() {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-600 dark:text-slate-300 focus:outline-none focus:border-violet-500"
+                    className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-600 dark:text-slate-300 focus:outline-none focus:border-violet-500 font-bold"
                   >
-                    <option value="RELEVANCE">Best Match</option>
-                    <option value="DISTANCE">Nearest First</option>
-                    <option value="PRICE_ASC">Price: Low → High</option>
-                    <option value="RATING">Rating</option>
+                    <option value="RELEVANCE">🧠 Best Match (Semantic)</option>
+                    <option value="DISTANCE">🎯 Nearest First</option>
+                    <option value="NAME">🏷️ Library Name (A → Z)</option>
+                    <option value="PRICE_ASC">💰 Price: Low → High</option>
+                    <option value="RATING">⭐ Rating: High → Low</option>
                   </select>
                 </div>
                 <div className="flex bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700">

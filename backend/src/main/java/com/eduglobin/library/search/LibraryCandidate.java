@@ -28,6 +28,8 @@ public class LibraryCandidate {
     private Integer availableSeats;
     private String locality;
     private String city;
+    private String address;
+    private String description;
     private Boolean isFree;
     private Boolean allowVisitorPasses;
 }
