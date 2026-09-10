@@ -64,9 +64,9 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
-    minHeapSize = "64m"
-    maxHeapSize = "256m"
-    jvmArgs("-XX:+EnableDynamicAgentLoading", "-Xshare:off")
+    minHeapSize = "128m"
+    maxHeapSize = "1024m"
+    jvmArgs("-XX:+EnableDynamicAgentLoading", "-Xshare:off", "-XX:MaxMetaspaceSize=512m")
 }
 
 tasks.named<BootJar>("bootJar") {
@@ -74,6 +74,7 @@ tasks.named<BootJar>("bootJar") {
 }
 
 tasks.withType<org.springframework.boot.gradle.tasks.run.BootRun> {
+    jvmArgs("-Xmx512m", "-XX:MaxMetaspaceSize=256m")
     val envFile = file("../.env")
     if (envFile.exists()) {
         envFile.readLines().forEach { line ->

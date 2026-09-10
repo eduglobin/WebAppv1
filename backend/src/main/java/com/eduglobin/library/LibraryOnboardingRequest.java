@@ -40,6 +40,7 @@ public class LibraryOnboardingRequest {
     private boolean hasGirlsSection;
     private int girlsSafetyScore = 85;
     private int cancellationDeadlineHours = 24;
+    private boolean allowVisitorPasses = true;
 
     // Flexible Slot Rule Parameters (Institute Libraries)
     private Integer minBookingMinutes = 30;
@@ -147,6 +148,9 @@ public class LibraryOnboardingRequest {
 
     public int getCancellationDeadlineHours() { return cancellationDeadlineHours; }
     public void setCancellationDeadlineHours(int cancellationDeadlineHours) { this.cancellationDeadlineHours = cancellationDeadlineHours; }
+
+    public boolean isAllowVisitorPasses() { return allowVisitorPasses; }
+    public void setAllowVisitorPasses(boolean allowVisitorPasses) { this.allowVisitorPasses = allowVisitorPasses; }
 
     public Integer getMinBookingMinutes() { return minBookingMinutes; }
     public void setMinBookingMinutes(Integer minBookingMinutes) { this.minBookingMinutes = minBookingMinutes; }

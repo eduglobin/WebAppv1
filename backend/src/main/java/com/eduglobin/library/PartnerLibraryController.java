@@ -458,4 +458,29 @@ public class PartnerLibraryController {
 
         return ResponseEntity.ok(ApiResponse.success(liveSeats));
     }
+
+    /**
+     * Operational toggle: Enable or disable 40-minute Visitor Passes for a library.
+     */
+    @PutMapping("/libraries/{libraryId}/visitor-pass-config")
+    @PreAuthorize("hasAnyRole('LIBRARY_OWNER', 'SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> updateVisitorPassConfig(
+            @PathVariable UUID libraryId,
+            @RequestBody Map<String, Object> body) {
+        
+        Boolean allowVisitorPasses = body.get("allowVisitorPasses") instanceof Boolean 
+                ? (Boolean) body.get("allowVisitorPasses") 
+                : Boolean.parseBoolean(String.valueOf(body.get("allowVisitorPasses")));
+
+        namedJdbc.update(
+            "UPDATE libraries SET allow_visitor_passes = :allowVisitorPasses, updated_at = NOW() WHERE id = :id",
+            new MapSqlParameterSource().addValue("id", libraryId).addValue("allowVisitorPasses", allowVisitorPasses)
+        );
+
+        return ResponseEntity.ok(ApiResponse.success(Map.of(
+            "libraryId", libraryId,
+            "allowVisitorPasses", allowVisitorPasses,
+            "message", "Visitor pass policy updated to: " + (allowVisitorPasses ? "ENABLED" : "DISABLED")
+        )));
+    }
 }

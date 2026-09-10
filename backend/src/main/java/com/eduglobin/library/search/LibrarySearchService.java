@@ -32,6 +32,7 @@ public class LibrarySearchService {
                             .locality(candidate.getLocality())
                             .city(candidate.getCity())
                             .isFree(candidate.getIsFree())
+                            .allowVisitorPasses(candidate.getAllowVisitorPasses())
                             .distanceKm(distanceKm)
                             .monthlyPrice(candidate.getMonthlyPrice())
                             .rating(candidate.getRating())

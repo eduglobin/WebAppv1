@@ -71,6 +71,7 @@ public class LibraryDetailController {
                 "COALESCE(l.address, 'IIT Bhilai Campus, Kutelabhata, Durg-Bhilai, Chhattisgarh 491001') as address, " +
                 "COALESCE(l.library_category, 'PRIVATE') as library_category, " +
                 "COALESCE(l.allowed_email_domain, 'iitbhilai.ac.in') as allowed_email_domain, " +
+                "COALESCE(l.allow_visitor_passes, TRUE) as allow_visitor_passes, " +
                 "l.base_desk_price_monthly, l.base_desk_price_daily, " +
                 "COALESCE((SELECT COUNT(*) FROM seat_desks sd WHERE sd.library_id = l.id AND sd.current_status = 'AVAILABLE'), 0) as available_seats, " +
                 "ST_Y(l.geo_point::geometry) as lat, ST_X(l.geo_point::geometry) as lng " +
@@ -157,7 +158,8 @@ public class LibraryDetailController {
                 "COALESCE(contact_number, '+91 771 255 1234') as contact_number, " +
                 "COALESCE(address, 'IIT Bhilai Campus, Kutelabhata, Durg-Bhilai, Chhattisgarh 491001') as address, " +
                 "COALESCE(library_category, 'PRIVATE') as library_category, " +
-                "COALESCE(allowed_email_domain, 'iitbhilai.ac.in') as allowed_email_domain, total_seats FROM libraries WHERE id = :id";
+                "COALESCE(allowed_email_domain, 'iitbhilai.ac.in') as allowed_email_domain, " +
+                "COALESCE(allow_visitor_passes, TRUE) as allow_visitor_passes, total_seats FROM libraries WHERE id = :id";
         Map<String, Object> rawLib = jdbcTemplate.queryForMap(libSql, new MapSqlParameterSource("id", id));
         Map<String, Object> lib = new LinkedHashMap<>(rawLib);
         lib.put("shifts", shifts);

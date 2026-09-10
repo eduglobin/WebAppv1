@@ -22,7 +22,7 @@ public class LibrarySearchRepository {
         StringBuilder sql = new StringBuilder();
         MapSqlParameterSource params = new MapSqlParameterSource();
 
-        sql.append("SELECT l.id, l.name, l.locality, l.city, COALESCE(l.is_free, FALSE) as is_free, l.monthly_price, l.rating, l.girls_safety_score, l.ac_available, ");
+        sql.append("SELECT l.id, l.name, l.locality, l.city, COALESCE(l.is_free, FALSE) as is_free, COALESCE(l.allow_visitor_passes, TRUE) as allow_visitor_passes, l.monthly_price, l.rating, l.girls_safety_score, l.ac_available, ");
         sql.append("l.amenities, l.focused_exams, l.seating_type, l.has_girls_section, l.is_published, ");
         sql.append("ST_Y(l.geo_point::geometry) as lat, ST_X(l.geo_point::geometry) as lng, ");
         sql.append("COALESCE((SELECT COUNT(*) FROM seat_desks sd WHERE sd.library_id = l.id AND sd.current_status = 'AVAILABLE'), 0) as available_seats ");
@@ -101,6 +101,7 @@ public class LibrarySearchRepository {
                 .locality(rs.getString("locality"))
                 .city(rs.getString("city"))
                 .isFree(rs.getBoolean("is_free"))
+                .allowVisitorPasses(rs.getBoolean("allow_visitor_passes"))
                 .distanceM(rs.getDouble("distance_m"))
                 .monthlyPrice(rs.getDouble("monthly_price"))
                 .rating(rs.getDouble("rating"))

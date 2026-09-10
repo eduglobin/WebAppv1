@@ -22,8 +22,11 @@ import org.springframework.test.context.TestPropertySource;
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
     // Dummy values so context loads without real credentials
+    "SUPABASE_URL=https://test.supabase.co",
+    "SUPABASE_SERVICE_ROLE_KEY=test-service-role-key",
     "app.supabase.url=https://test.supabase.co",
     "app.supabase.anon-key=test-anon-key",
+    "app.supabase.service-role-key=test-service-role-key",
     "app.supabase.jwt-secret=dGVzdC1qd3Qtc2VjcmV0LXRoYXQtaXMtbG9uZy1lbm91Z2gtZm9yLUhNQUMtU0hBMjU2",
     "spring.datasource.url=jdbc:postgresql://localhost:5432/eduglobin_test",
     "spring.datasource.username=postgres",

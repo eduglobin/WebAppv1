@@ -1406,7 +1406,7 @@ export default function StudentDashboardPage() {
                       className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-bold text-xs"
                     >
                       <option value="">-- Choose Any Library --</option>
-                      {allLibraries.map(l => (
+                      {allLibraries.filter((l: any) => l.allowVisitorPasses !== false && l.allow_visitor_passes !== false).map(l => (
                         <option key={l.id} value={l.id}>{l.name} ({l.city || l.locality || 'Campus'})</option>
                       ))}
                     </select>
@@ -1418,7 +1418,7 @@ export default function StudentDashboardPage() {
                       className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-bold text-xs"
                     >
                       <option value="">-- Choose Library --</option>
-                      {myLibraries.map(l => (
+                      {myLibraries.filter((l: any) => l.allowVisitorPasses !== false && l.allow_visitor_passes !== false).map(l => (
                         <option key={l.library_id} value={l.library_id}>{l.library_name} ({l.city})</option>
                       ))}
                     </select>
@@ -1430,7 +1430,7 @@ export default function StudentDashboardPage() {
                       className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-bold text-xs"
                     >
                       <option value="">-- Choose Library --</option>
-                      {Array.from(new Map(bookings.map(b => [b.library_id || b.library_name, b])).values()).map((b: any) => (
+                      {Array.from(new Map(bookings.map(b => [b.library_id || b.library_name, b])).values()).filter((b: any) => b.allowVisitorPasses !== false && b.allow_visitor_passes !== false).map((b: any) => (
                         <option key={b.id} value={b.library_id || b.id}>{b.library_name} ({b.city || 'Campus'})</option>
                       ))}
                     </select>

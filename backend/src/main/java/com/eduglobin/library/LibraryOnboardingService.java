@@ -127,6 +127,7 @@ public class LibraryOnboardingService {
                     "min_booking_minutes = :minBookingMinutes, max_booking_minutes = :maxBookingMinutes, " +
                     "max_daily_minutes_per_student = :maxDailyMinutesPerStudent, advance_booking_max_minutes = :advanceBookingMaxMinutes, " +
                     "turnover_buffer_minutes = :turnoverBufferMinutes, operating_hours_start = :operatingHoursStart, operating_hours_end = :operatingHoursEnd, " +
+                    "allow_visitor_passes = :allowVisitorPasses, " +
                     "approval_status = 'PENDING_APPROVAL', " +
                     "is_published = FALSE " +
                     "WHERE id = :id";
@@ -146,6 +147,7 @@ public class LibraryOnboardingService {
                     .addValue("girlsSafetyScore", request.getGirlsSafetyScore())
                     .addValue("hasGirlsSection", request.isHasGirlsSection())
                     .addValue("cancellationDeadlineHours", request.getCancellationDeadlineHours())
+                    .addValue("allowVisitorPasses", request.isAllowVisitorPasses())
                     .addValue("hasDiscussionRoom", request.isHasDiscussionRoom())
                     .addValue("discussionRoomCapacity", request.getDiscussionRoomCapacity())
                     .addValue("wifiAvailable", request.isWifiAvailable())
@@ -201,7 +203,7 @@ public class LibraryOnboardingService {
                     "is_published, onboarding_source, approval_status, kyc_document, is_free, monthly_price, " +
                     "library_category, allowed_email_domain, min_booking_minutes, max_booking_minutes, " +
                     "max_daily_minutes_per_student, advance_booking_max_minutes, turnover_buffer_minutes, " +
-                    "operating_hours_start, operating_hours_end" +
+                    "operating_hours_start, operating_hours_end, allow_visitor_passes" +
                     ") VALUES (" +
                     ":id, :ownerUuid, :name, :slug, :email, :contactNumber, :address, :city, :locality, :state, " +
                     "ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography, :totalSeats, " +
@@ -213,7 +215,7 @@ public class LibraryOnboardingService {
                     "FALSE, :onboardingSource, 'PENDING_APPROVAL', :kycDocument, :isFree, :monthlyPrice, " +
                     ":libraryCategory, :allowedEmailDomain, :minBookingMinutes, :maxBookingMinutes, " +
                     ":maxDailyMinutesPerStudent, :advanceBookingMaxMinutes, :turnoverBufferMinutes, " +
-                    ":operatingHoursStart, :operatingHoursEnd" +
+                    ":operatingHoursStart, :operatingHoursEnd, :allowVisitorPasses" +
                     ")";
 
             MapSqlParameterSource libParams = new MapSqlParameterSource()
@@ -235,6 +237,7 @@ public class LibraryOnboardingService {
                     .addValue("girlsSafetyScore", request.getGirlsSafetyScore())
                     .addValue("hasGirlsSection", request.isHasGirlsSection())
                     .addValue("cancellationDeadlineHours", request.getCancellationDeadlineHours())
+                    .addValue("allowVisitorPasses", request.isAllowVisitorPasses())
                     .addValue("hasDiscussionRoom", request.isHasDiscussionRoom())
                     .addValue("discussionRoomCapacity", request.getDiscussionRoomCapacity())
                     .addValue("wifiAvailable", request.isWifiAvailable())
@@ -562,7 +565,8 @@ public class LibraryOnboardingService {
                 "wifi_available, cctv_available, power_backup_available, water_dispenser_available, newspaper_available, " +
                 "books_capacity, available_books_data, base_desk_price_daily, base_desk_price_monthly, sofa_price_daily, sofa_price_monthly, " +
                 "locker_mode, layout_type, layout_file_url, proof_doc_type, proof_doc_number, proof_doc_url, kyc_document, " +
-                "approval_status, rejection_reason, is_published, is_free, monthly_price, library_category, allowed_email_domain, created_at " +
+                "approval_status, rejection_reason, is_published, is_free, monthly_price, library_category, allowed_email_domain, " +
+                "COALESCE(allow_visitor_passes, TRUE) as allow_visitor_passes, created_at " +
                 "FROM libraries WHERE owner_id = CAST(:ownerId AS uuid) ORDER BY created_at DESC LIMIT 1";
         try {
             Map<String, Object> lib = new LinkedHashMap<>(jdbcTemplate.queryForMap(sql, new MapSqlParameterSource("ownerId", ownerId)));

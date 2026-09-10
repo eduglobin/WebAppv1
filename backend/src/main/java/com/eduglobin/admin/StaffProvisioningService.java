@@ -31,10 +31,10 @@ public class StaffProvisioningService {
     private static final String CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$";
     private static final int TEMP_PASSWORD_LENGTH = 14;
 
-    @Value("${SUPABASE_URL}")
+    @Value("${SUPABASE_URL:${app.supabase.url:https://test.supabase.co}}")
     private String supabaseUrl;
 
-    @Value("${SUPABASE_SERVICE_ROLE_KEY}")
+    @Value("${SUPABASE_SERVICE_ROLE_KEY:${app.supabase.service-role-key:test-service-role-key}}")
     private String serviceRoleKey;
 
     private final NamedParameterJdbcTemplate jdbcTemplate;

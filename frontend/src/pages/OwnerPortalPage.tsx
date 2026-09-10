@@ -29,6 +29,7 @@ interface LibraryData {
   approvalStatus: 'DRAFT' | 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'CHANGES_REQUESTED';
   totalSeats: number;
   lockerMode: string;
+  allowVisitorPasses?: boolean;
   acAvailable?: boolean;
   hasGirlsSection?: boolean;
   hasDiscussionRoom?: boolean;
@@ -74,6 +75,7 @@ function normalizeLibraryData(raw: any): LibraryData | null {
     allowedEmailDomain: raw.allowedEmailDomain || raw.allowed_email_domain || '',
     totalSeats: Number(raw.totalSeats || raw.total_seats || 30),
     lockerMode: raw.lockerMode || raw.locker_mode || 'PAID_MANAGED',
+    allowVisitorPasses: raw.allowVisitorPasses !== undefined ? Boolean(raw.allowVisitorPasses) : (raw.allow_visitor_passes !== undefined ? Boolean(raw.allow_visitor_passes) : true),
     acAvailable: raw.acAvailable !== undefined ? Boolean(raw.acAvailable) : Boolean(raw.ac_available),
     hasGirlsSection: raw.hasGirlsSection !== undefined ? Boolean(raw.hasGirlsSection) : Boolean(raw.has_girls_section),
     hasDiscussionRoom: raw.hasDiscussionRoom !== undefined ? Boolean(raw.hasDiscussionRoom) : Boolean(raw.has_discussion_room),
@@ -430,6 +432,23 @@ export default function OwnerPortalPage() {
       }
     } catch (err: any) {
       alert(err.response?.data?.message || 'Error deciding visitor request.');
+    }
+  };
+
+  const handleToggleVisitorPasses = async (enabled: boolean) => {
+    if (!library?.id) return;
+    try {
+      const { data } = await api.put(`/api/v1/partner/libraries/${library.id}/visitor-pass-config`, {
+        allowVisitorPasses: enabled
+      });
+      if (data?.success) {
+        setLibrary((prev) => prev ? { ...prev, allowVisitorPasses: enabled } : null);
+        alert(`✓ Visitor pass policy updated: ${enabled ? 'ENABLED (Students can request 40-min visitor passes)' : 'DISABLED (No visitor passes accepted)'}`);
+      } else {
+        alert(data?.message || 'Failed to update visitor pass configuration.');
+      }
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Error updating visitor pass configuration.');
     }
   };
 
@@ -5070,6 +5089,44 @@ export default function OwnerPortalPage() {
         {/* TAB: VISITOR ACCESS, REQUEST APPROVALS & VISITOR LOGS */}
         {(activeTab === 'desk' || (activeTab === 'walkin' && walkInSubTab === 'VISITORS')) && (
           <div className="space-y-8">
+            {/* VISITOR PASS POLICY CONTROL BANNER */}
+            <div className="p-4 rounded-2xl bg-violet-50/70 dark:bg-violet-950/30 border border-violet-200 dark:border-violet-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-violet-600/10 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400 flex items-center justify-center text-xl shrink-0">
+                  🎫
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>40-Min Visitor Pass Request Policy</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                      library?.allowVisitorPasses !== false
+                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                        : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30'
+                    }`}>
+                      {library?.allowVisitorPasses !== false ? 'ENABLED' : 'DISABLED'}
+                    </span>
+                  </h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    {library?.allowVisitorPasses !== false
+                      ? 'Students can request 40-min circulation visits from their mobile app or library page.'
+                      : 'Visitor pass requests from students are disabled for this library. Direct counter check-ins by owner still work.'}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleToggleVisitorPasses(library?.allowVisitorPasses === false)}
+                className={`px-4 py-2 rounded-xl text-xs font-extrabold shadow transition cursor-pointer shrink-0 ${
+                  library?.allowVisitorPasses !== false
+                    ? 'bg-rose-600 hover:bg-rose-500 text-white'
+                    : 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                }`}
+              >
+                {library?.allowVisitorPasses !== false ? '🚫 Disable Visitor Passes' : '✓ Enable Visitor Passes'}
+              </button>
+            </div>
+
             {/* 1. OWNER SEARCH BY STUDENT ID / PHONE (DIRECT ISSUE PASS & RETURN) */}
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-sm space-y-4">
               <div>

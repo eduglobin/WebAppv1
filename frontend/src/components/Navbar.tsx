@@ -95,10 +95,19 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 bg-white/90 dark:bg-slate-950/90 border-b border-slate-200 dark:border-slate-800/80 backdrop-blur-md transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
+          {/* Logo & Brand Name */}
           <div className="flex-shrink-0 flex items-center">
-            <Link to="/" className="flex items-center transition-opacity hover:opacity-90 select-none">
-              <img src="/eduglobin_logo.png" alt="EduGlobin - Find. Book. Study. Grow." className="h-10 sm:h-11 w-auto object-contain" />
+            <Link to="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-90 select-none">
+              <img src="/eduglobin_logo.png" alt="EduGlobin" className="h-9 sm:h-10 w-auto object-contain rounded-xl" />
+              <span className="text-xl sm:text-2xl font-extrabold tracking-tight select-none flex items-center font-headers">
+                <span className="text-[#032b85] dark:text-white">Edu</span>
+                <span className="text-[#0f62fe] dark:text-[#00b4ff]">Glob</span>
+                <span className="relative inline-block text-[#0f62fe] dark:text-[#00b4ff] leading-none">
+                  ı
+                  <span className="absolute -top-[3px] left-[2.5px] w-2 h-2 bg-[#ff9900] rounded-full"></span>
+                </span>
+                <span className="text-[#0f62fe] dark:text-[#00b4ff]">n</span>
+              </span>
             </Link>
           </div>
 
@@ -107,8 +116,11 @@ export default function Navbar() {
             {/* 1. GUEST NAVBAR */}
             {isGuest && (
               <>
-                <Link to="/search" className="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white font-medium text-sm transition-colors">
-                  Finder
+                <Link to="/search" className="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white font-semibold text-sm transition-colors">
+                  Library Finder
+                </Link>
+                <Link to="/recommend" className="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white font-medium text-sm transition-colors">
+                  AI Recommender
                 </Link>
                 <Link to="/about" className="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white font-medium text-sm transition-colors">
                   About EduGlobin
@@ -126,10 +138,13 @@ export default function Navbar() {
                   My Libraries
                 </Link>
                 <Link to="/search" className="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white font-medium text-sm transition-colors">
-                  Finder
+                  Library Finder
                 </Link>
                 <Link to="/recommend" className="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white font-medium text-sm transition-colors">
-                  AI Solver
+                  AI Recommender
+                </Link>
+                <Link to="/about" className="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white font-medium text-sm transition-colors">
+                  About Us
                 </Link>
               </>
             )}
@@ -140,11 +155,11 @@ export default function Navbar() {
                 <Link to="/owner/portal" className="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white font-semibold text-sm transition-colors">
                   Dashboard / ERP
                 </Link>
+                <Link to="/owner/portal?tab=onboarding" className="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white font-medium text-sm transition-colors">
+                  Profile &amp; Settings
+                </Link>
                 <Link to="/about" className="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white font-medium text-sm transition-colors">
                   About EduGlobin
-                </Link>
-                <Link to="/owner/portal?tab=onboarding" className="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white font-medium text-sm transition-colors">
-                  Profile &amp; Library Settings
                 </Link>
               </>
             )}
@@ -157,6 +172,9 @@ export default function Navbar() {
                 </Link>
                 <Link to="/search" className="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white font-medium text-sm transition-colors">
                   Finder
+                </Link>
+                <Link to="/about" className="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white font-medium text-sm transition-colors">
+                  About Us
                 </Link>
               </>
             )}

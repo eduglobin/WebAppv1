@@ -49,6 +49,8 @@ interface LibraryInfo {
   seating_type: string;
   isFree?: boolean;
   is_free?: boolean;
+  allowVisitorPasses?: boolean;
+  allow_visitor_passes?: boolean;
   libraryCategory?: string;
   library_category?: string;
   allowedEmailDomain?: string;
@@ -211,6 +213,8 @@ export default function LibraryDetailPage() {
           contact_number: payload.library.contact_number || prev?.contact_number,
           address: payload.library.address || prev?.address,
           isFree: payload.library.is_free ?? prev?.isFree,
+          allowVisitorPasses: payload.library.allow_visitor_passes ?? payload.library.allowVisitorPasses ?? prev?.allowVisitorPasses,
+          allow_visitor_passes: payload.library.allow_visitor_passes ?? payload.library.allowVisitorPasses ?? prev?.allow_visitor_passes,
         }));
       }
       if (payload.seats && payload.seats.length > 0) {
@@ -1248,17 +1252,26 @@ export default function LibraryDetailPage() {
                   <span>Need a Quick 40-Min Visit? (Book Issue / Return / Enquiry)</span>
                 </h4>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Don't need a full study desk? Request an instant 40-minute Circulation Visitor Pass to visit the library counter.
+                  {library?.allowVisitorPasses !== false && library?.allow_visitor_passes !== false
+                    ? "Don't need a full study desk? Request an instant 40-minute Circulation Visitor Pass to visit the library counter."
+                    : "Visitor passes are currently disabled by the library owner for this location."}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowVisitorModal(true)}
-                className="px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs shadow-md shadow-violet-600/20 transition cursor-pointer flex items-center gap-1.5"
-              >
-                <span>🎟️</span>
-                <span>Request Visitor Pass</span>
-              </button>
+              {library?.allowVisitorPasses !== false && library?.allow_visitor_passes !== false ? (
+                <button
+                  type="button"
+                  onClick={() => setShowVisitorModal(true)}
+                  className="px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs shadow-md shadow-violet-600/20 transition cursor-pointer flex items-center gap-1.5"
+                >
+                  <span>🎟️</span>
+                  <span>Request Visitor Pass</span>
+                </button>
+              ) : (
+                <span className="px-3 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold text-xs border border-slate-300 dark:border-slate-700 flex items-center gap-1.5">
+                  <span>🚫</span>
+                  <span>Visitor Passes Disabled</span>
+                </span>
+              )}
             </div>
 
             {/* Student Grievance & Feedback Corner Card */}

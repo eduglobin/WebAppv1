@@ -30,4 +30,5 @@ public class ScoredLibraryDto {
     private String locality;
     private String city;
     private Boolean isFree;
+    private Boolean allowVisitorPasses;
 }
