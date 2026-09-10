@@ -212,7 +212,7 @@ public class LibraryOnboardingService {
                     ":waterDispenserAvailable, :newspaperAvailable, :booksCapacity, :availableBooksData, " +
                     ":baseDeskPriceDaily, :baseDeskPriceMonthly, :sofaPriceDaily, :sofaPriceMonthly, " +
                     ":lockerMode, :layoutType, :layoutFileUrl, :proofDocType, :proofDocNumber, :proofDocUrl, " +
-                    "FALSE, :onboardingSource, 'PENDING_APPROVAL', :kycDocument, :isFree, :monthlyPrice, " +
+                    "TRUE, :onboardingSource, 'APPROVED', :kycDocument, :isFree, :monthlyPrice, " +
                     ":libraryCategory, :allowedEmailDomain, :minBookingMinutes, :maxBookingMinutes, " +
                     ":maxDailyMinutesPerStudent, :advanceBookingMaxMinutes, :turnoverBufferMinutes, " +
                     ":operatingHoursStart, :operatingHoursEnd, :allowVisitorPasses" +

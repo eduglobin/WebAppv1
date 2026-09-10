@@ -434,7 +434,9 @@ export default function AdminPortalPage() {
       });
       if (res.data?.success) {
         setActionSuccessMsg('Library listings approved successfully.');
+        setPendingLibraries(prev => prev.filter(l => l.id !== libId));
         await fetchPending(success.token);
+        await fetchMetrics(success.token);
       }
     } catch (err: any) {
       setActionError(err.response?.data?.message || 'Failed to approve library.');
@@ -459,7 +461,9 @@ export default function AdminPortalPage() {
       if (res.data?.success) {
         setActionSuccessMsg('Library listings rejected successfully.');
         setActionReason(prev => ({ ...prev, [libId]: '' }));
+        setPendingLibraries(prev => prev.filter(l => l.id !== libId));
         await fetchPending(success.token);
+        await fetchMetrics(success.token);
       }
     } catch (err: any) {
       setActionError(err.response?.data?.message || 'Failed to reject library.');
@@ -482,9 +486,11 @@ export default function AdminPortalPage() {
         headers: { Authorization: `Bearer ${success.token}` },
       });
       if (res.data?.success) {
-        setActionSuccessMsg('Changes requested from library owner.');
+        setActionSuccessMsg('Request for required changes sent to owner.');
         setActionReason(prev => ({ ...prev, [libId]: '' }));
+        setPendingLibraries(prev => prev.filter(l => l.id !== libId));
         await fetchPending(success.token);
+        await fetchMetrics(success.token);
       }
     } catch (err: any) {
       setActionError(err.response?.data?.message || 'Failed to request changes.');

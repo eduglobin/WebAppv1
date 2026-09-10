@@ -108,28 +108,28 @@ public class LibrarySearchRepository {
     }
 
     private LibraryCandidate mapRowToCandidate(ResultSet rs, int rowNum) throws SQLException {
-        return LibraryCandidate.builder()
-                .id(UUID.fromString(rs.getString("id")))
-                .name(rs.getString("name"))
-                .locality(rs.getString("locality"))
-                .city(rs.getString("city"))
-                .address(rs.getString("address"))
-                .description(rs.getString("description"))
-                .isFree(rs.getBoolean("is_free"))
-                .allowVisitorPasses(rs.getBoolean("allow_visitor_passes"))
-                .distanceM(rs.getDouble("distance_m"))
-                .monthlyPrice(rs.getDouble("monthly_price"))
-                .rating(rs.getDouble("rating"))
-                .girlsSafetyScore(rs.getInt("girls_safety_score"))
-                .acAvailable(rs.getBoolean("ac_available"))
-                .amenities(convertSqlArrayToList(rs.getArray("amenities")))
-                .focusedExams(convertSqlArrayToList(rs.getArray("focused_exams")))
-                .seatingType(rs.getString("seating_type"))
-                .hasGirlsSection(rs.getBoolean("has_girls_section"))
-                .lat(rs.getDouble("lat"))
-                .lng(rs.getDouble("lng"))
-                .availableSeats(rs.getInt("available_seats"))
-                .build();
+        LibraryCandidate c = new LibraryCandidate();
+        c.setId(UUID.fromString(rs.getString("id")));
+        c.setName(rs.getString("name"));
+        c.setLocality(rs.getString("locality"));
+        c.setCity(rs.getString("city"));
+        c.setAddress(rs.getString("address"));
+        c.setDescription(rs.getString("description"));
+        c.setIsFree(rs.getBoolean("is_free"));
+        c.setAllowVisitorPasses(rs.getBoolean("allow_visitor_passes"));
+        c.setDistanceM(rs.getDouble("distance_m"));
+        c.setMonthlyPrice(rs.getDouble("monthly_price"));
+        c.setRating(rs.getDouble("rating"));
+        c.setGirlsSafetyScore(rs.getInt("girls_safety_score"));
+        c.setAcAvailable(rs.getBoolean("ac_available"));
+        c.setAmenities(convertSqlArrayToList(rs.getArray("amenities")));
+        c.setFocusedExams(convertSqlArrayToList(rs.getArray("focused_exams")));
+        c.setSeatingType(rs.getString("seating_type"));
+        c.setHasGirlsSection(rs.getBoolean("has_girls_section"));
+        c.setLat(rs.getDouble("lat"));
+        c.setLng(rs.getDouble("lng"));
+        c.setAvailableSeats(rs.getInt("available_seats"));
+        return c;
     }
 
     private List<String> convertSqlArrayToList(Array array) throws SQLException {
