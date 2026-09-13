@@ -14,6 +14,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up JDK 21 (for Gradle build)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('backend/**/*.gradle*', 'backend/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Build backend bootJar
+        working-directory: backend
+        run: |
+          chmod +x gradlew
+          ./gradlew bootJar -x test --no-daemon
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -22,13 +49,15 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set lower case repository name
-        run: echo "IMAGE_REPO=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+        run: echo "IMAGE_REPO=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Build & push backend image
         uses: docker/build-push-action@v5
         with:
           context: ./backend
           push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           tags: |
             ghcr.io/${{ env.IMAGE_REPO }}/backend:${{ github.sha }}
             ghcr.io/${{ env.IMAGE_REPO }}/backend:latest
@@ -38,6 +67,8 @@ jobs:
         with:
           context: ./frontend
           push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           tags: |
             ghcr.io/${{ env.IMAGE_REPO }}/frontend:${{ github.sha }}
             ghcr.io/${{ env.IMAGE_REPO }}/frontend:latest
