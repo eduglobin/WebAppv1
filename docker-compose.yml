@@ -49,8 +49,9 @@ services:
       - .env
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
-      SPRING_REDIS_HOST: redis
-      SPRING_REDIS_PORT: 6379
+      UPSTASH_REDIS_URL: redis://redis:6379
+      UPSTASH_REDIS_PASSWORD: ""
+      REDIS_SSL_ENABLED: "false"
     depends_on:
       redis:
         condition: service_healthy
