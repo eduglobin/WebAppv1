@@ -1,14 +1,15 @@
-# ---- Stage 1: Build with Gradle ----
-FROM gradle:8.11-jdk21-alpine AS build
+# ---- Stage 1: Build with JDK 21 & Gradle Wrapper ----
+FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /app
 
-# Cache dependencies
-COPY build.gradle.kts settings.gradle.kts gradle.properties ./
-RUN gradle dependencies --no-daemon || true
+# Copy gradle wrapper & configuration files first for layer caching
+COPY build.gradle.kts settings.gradle.kts gradle.properties gradlew ./
+COPY gradle ./gradle
+RUN chmod +x ./gradlew && ./gradlew dependencies --no-daemon || true
 
 # Copy source code and build production jar
 COPY src ./src
-RUN gradle bootJar -x test --no-daemon
+RUN ./gradlew bootJar -x test --no-daemon
 
 # ---- Stage 2: Runtime ----
 FROM eclipse-temurin:21-jre-alpine
