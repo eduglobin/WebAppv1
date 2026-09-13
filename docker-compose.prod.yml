@@ -1,9 +1,11 @@
-version: '3.8'
+version: "3.9"
 
 services:
+  # ── Caddy Reverse Proxy & Automatic SSL (Ports 80 & 443) ────────────────────
   caddy:
     image: caddy:2-alpine
     container_name: eduglobin-caddy
+    restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
@@ -11,33 +13,53 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data
       - caddy_config:/config
-    restart: unless-stopped
     depends_on:
       - backend
       - frontend
 
+  # ── Backend Service (Docker Hub published image) ───────────────────────────
   backend:
-    image: ghcr.io/${IMAGE_REPO:-eduglobin/eduglobin}/backend:${IMAGE_TAG:-latest}
-    container_name: eduglobin-backend
-    env_file: .env.production
+    image: ${DOCKER_HUB_USER:-adityaj115}/eduglobin-backend:${IMAGE_TAG:-latest}
+    container_name: eduglobin-backend-prod
     restart: unless-stopped
-    depends_on:
-      - redis
     ports:
       - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      UPSTASH_REDIS_URL: redis://redis:6379
+      UPSTASH_REDIS_PASSWORD: ""
+      REDIS_SSL_ENABLED: "false"
+    depends_on:
+      redis:
+        condition: service_healthy
 
+  # ── Frontend Service (Docker Hub published image) ──────────────────────────
   frontend:
-    image: ghcr.io/${IMAGE_REPO:-eduglobin/eduglobin}/frontend:${IMAGE_TAG:-latest}
-    container_name: eduglobin-frontend
+    image: ${DOCKER_HUB_USER:-adityaj115}/eduglobin-frontend:${IMAGE_TAG:-latest}
+    container_name: eduglobin-frontend-prod
     restart: unless-stopped
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
 
+  # ── Production Redis Service ────────────────────────────────────────────────
   redis:
     image: redis:7-alpine
     container_name: eduglobin-redis-prod
-    command: redis-server --appendonly yes
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --save 60 1 --loglevel warning
     volumes:
       - redis_data:/data
-    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 volumes:
   caddy_data:
