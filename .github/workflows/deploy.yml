@@ -31,8 +31,8 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Build backend bootJar
-        working-directory: backend
         run: |
+          cd backend
           chmod +x gradlew
           ./gradlew bootJar -x test --no-daemon
         env:
