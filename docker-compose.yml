@@ -1,7 +1,26 @@
 version: "3.9"
 
 services:
-  # ── Local Redis (seat-lock engine, caching) ──────────────────────────
+  # ── Local PostgreSQL + PostGIS Database ─────────────────────────────────────
+  postgres:
+    image: postgis/postgis:15-3.3-alpine
+    container_name: eduglobin-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-eduglobin}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-Eduglobin2026@}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-eduglobin}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Local Redis (Seat Locking Engine & Cache) ────────────────────────────────
   redis:
     image: redis:7-alpine
     container_name: eduglobin-redis
@@ -17,27 +36,31 @@ services:
       timeout: 5s
       retries: 3
 
-  # ── Backend Spring Boot Service ──────────────────────────────────────
+  # ── Backend Spring Boot Service (Port 8080) ──────────────────────────────────
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: eduglobin-backend-local
+    container_name: eduglobin-backend
     restart: unless-stopped
     ports:
       - "8080:8080"
     env_file:
       - .env
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
     depends_on:
       redis:
         condition: service_healthy
 
-  # ── Frontend React Vite SPA ──────────────────────────────────────────
+  # ── Frontend React Vite SPA (Port 5173 / Nginx 80) ──────────────────────────
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: eduglobin-frontend-local
+    container_name: eduglobin-frontend
     restart: unless-stopped
     ports:
       - "5173:80"
@@ -45,4 +68,5 @@ services:
       - backend
 
 volumes:
+  postgres_data:
   redis_data:
