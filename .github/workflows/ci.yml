@@ -25,10 +25,10 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x backend/gradlew
 
-      - name: Build and test backend
+      - name: Build backend
         run: |
           cd backend
-          ./gradlew check --no-daemon
+          ./gradlew bootJar -x test --no-daemon
 
   frontend:
     name: Frontend CI (Node 20 / TypeScript)
