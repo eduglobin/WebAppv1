@@ -58,3 +58,5 @@ desktop.ini
 # ──────────────────────────────────────────
 *.log
 logs/
+
+!backend/gradle/wrapper/gradle-wrapper.jar
