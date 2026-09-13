@@ -22,9 +22,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set lower case repository name
-        id: repo_name
-        run: |
-          echo "IMAGE_REPO=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+        run: echo "IMAGE_REPO=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Build & push backend image
         uses: docker/build-push-action@v5
