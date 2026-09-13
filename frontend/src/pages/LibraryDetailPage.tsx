@@ -24,6 +24,7 @@ export interface Seat {
   custom_type_icon?: string;
   dist_to_ac_m?: number;
   dist_to_door_m?: number;
+  allocation_type?: string;
 }
 
 interface Shift {
@@ -480,6 +481,11 @@ export default function LibraryDetailPage() {
     if (!session) {
       setSelectedSeat(seat);
       setShowGuestModal(true);
+      return;
+    }
+
+    if (seat.allocation_type === 'RESERVED') {
+      alert(`🔒 Dedicated Monthly Seat:\n\nDesk ${seat.seatCode} is dedicated to a monthly subscriber and cannot be self-booked for flexible hourly/daily slots. Please select a NON_RESERVED desk or contact the library owner.`);
       return;
     }
 

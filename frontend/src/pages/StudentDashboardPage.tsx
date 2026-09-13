@@ -254,9 +254,28 @@ export default function StudentDashboardPage() {
     }
   };
 
+  const [reservedPass, setReservedPass] = useState<any | null>(null);
+
+  const handleReservedCheckOut = async () => {
+    if (!reservedPass?.enrollment_id) return;
+    const confirmCheckOut = window.confirm('Are you sure you want to check out for today? Your monthly seat remains reserved for you, but will be marked vacant for the rest of today.');
+    if (!confirmCheckOut) return;
+    try {
+      const { data } = await api.post('/api/v1/partner/private-libraries/reserved-attendance/check-out', {
+        enrollmentId: reservedPass.enrollment_id
+      });
+      if (data?.success || data?.status === 'CHECKED_OUT') {
+        alert('✓ Self check-out successful! Seat marked vacant for today.');
+        fetchDashboard();
+      }
+    } catch (e: any) {
+      alert(e.response?.data?.message || 'Failed to check out.');
+    }
+  };
+
   const fetchDashboard = async () => {
     try {
-      const [dashRes, walletRes, txRes, loansRes, visitRes, statsRes, vReqRes, pVacRes, logsRes, allLibsRes] = await Promise.allSettled([
+      const [dashRes, walletRes, txRes, loansRes, visitRes, statsRes, vReqRes, pVacRes, logsRes, allLibsRes, resPassRes] = await Promise.allSettled([
         api.get('/api/v1/student/dashboard'),
         api.get('/api/v1/students/me/wallet'),
         api.get('/api/v1/students/me/wallet/transactions'),
@@ -266,7 +285,8 @@ export default function StudentDashboardPage() {
         api.get('/api/v1/students/me/visitor-requests'),
         api.get('/api/v1/students/me/pending-vacate-requests'),
         api.get('/api/v1/students/me/data-access-log'),
-        api.get('/api/v1/libraries/all')
+        api.get('/api/v1/libraries/all'),
+        api.get('/api/v1/student/reserved-pass')
       ]);
 
       if (dashRes.status === 'fulfilled' && dashRes.value.data?.success) {
@@ -306,6 +326,9 @@ export default function StudentDashboardPage() {
         if (Array.isArray(libs)) {
           setAllLibraries(libs);
         }
+      }
+      if (resPassRes.status === 'fulfilled' && resPassRes.value.data) {
+        setReservedPass(resPassRes.value.data?.enrollment_id ? resPassRes.value.data : null);
       }
     } catch (e) {
       console.error('Error fetching dashboard:', e);
@@ -464,12 +487,65 @@ export default function StudentDashboardPage() {
           </div>
         )}
 
-        {/* Outstanding Fine Notice */}
-        {wallet?.hasOutstandingFine && (
-          <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-xs flex items-start gap-3 shadow-sm">
-            <div>
-              <strong className="font-semibold block mb-0.5">Outstanding Cancellation Fine</strong>
-              {wallet.fineNotice}
+        {/* Reserved Monthly Pass Card (Module 66 - Monthly Member Dashboard) */}
+        {reservedPass && (
+          <div className="mb-8 p-6 rounded-3xl bg-gradient-to-r from-emerald-950/80 via-slate-900 to-emerald-900 border border-emerald-500/40 text-white shadow-xl relative overflow-hidden">
+            <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-500 text-slate-950 uppercase tracking-wider">
+                    🔒 Dedicated Monthly Pass
+                  </span>
+                  {reservedPass.subscription_status === 'GRACE' ? (
+                    <span className="px-3 py-1 rounded-full text-xs font-black bg-amber-500 text-slate-950 uppercase tracking-wider">
+                      ⚠️ Grace Period
+                    </span>
+                  ) : (
+                    <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
+                      ACTIVE MEMBER
+                    </span>
+                  )}
+                </div>
+                <h2 className="text-2xl font-black tracking-tight">{reservedPass.library_name}</h2>
+                <p className="text-sm text-emerald-200/80 font-medium mt-0.5">{reservedPass.library_address}</p>
+                <div className="flex items-center gap-4 mt-4 text-xs font-semibold">
+                  <span className="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
+                    Seat: <strong className="text-emerald-400 font-mono text-sm">{reservedPass.seat_code}</strong>
+                  </span>
+                  <span className="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
+                    Period End: <strong className="text-slate-200">{new Date(reservedPass.current_period_end).toLocaleDateString()}</strong>
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-end gap-3 w-full md:w-auto">
+                <div className="text-right">
+                  <span className="text-xxs uppercase tracking-wider text-emerald-300 font-bold block mb-1">
+                    Today's Attendance Status
+                  </span>
+                  {reservedPass.is_checked_in_today ? (
+                    <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-emerald-600 text-white font-extrabold text-sm shadow-md">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-200 animate-pulse" />
+                      🟢 Checked In &amp; Present Today
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-emerald-200 text-emerald-900 font-bold text-sm shadow-sm">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
+                      🟢 Active Subscription — Not Checked In
+                    </span>
+                  )}
+                </div>
+
+                {reservedPass.is_checked_in_today && (
+                  <button
+                    onClick={handleReservedCheckOut}
+                    className="w-full md:w-auto px-5 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-extrabold border border-amber-500/30 transition shadow-lg cursor-pointer"
+                  >
+                    🚪 Check Out for Today (Self-Service)
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}

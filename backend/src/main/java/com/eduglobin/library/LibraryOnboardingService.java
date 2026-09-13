@@ -127,7 +127,11 @@ public class LibraryOnboardingService {
                     "min_booking_minutes = :minBookingMinutes, max_booking_minutes = :maxBookingMinutes, " +
                     "max_daily_minutes_per_student = :maxDailyMinutesPerStudent, advance_booking_max_minutes = :advanceBookingMaxMinutes, " +
                     "turnover_buffer_minutes = :turnoverBufferMinutes, operating_hours_start = :operatingHoursStart, operating_hours_end = :operatingHoursEnd, " +
-                    "allow_visitor_passes = :allowVisitorPasses, " +
+                    "allow_visitor_passes = :allowVisitorPasses, enable_monthly_pass_subscription = :enableMonthlyPassSubscription, " +
+                    "monthly_locker_mode = :monthlyLockerMode, monthly_locker_price = :monthlyLockerPrice, " +
+                    "daily_locker_mode = :dailyLockerMode, daily_locker_price = :dailyLockerPrice, overnight_locker_charge = :overnightLockerCharge, " +
+                    "whatsapp_business_number = :whatsappBusinessNumber, " +
+                    "whatsapp_connected = :whatsappConnected, whatsapp_verified = :whatsappVerified, has_book_catalog = :hasBookCatalog, " +
                     "approval_status = 'PENDING_APPROVAL', " +
                     "is_published = FALSE " +
                     "WHERE id = :id";
@@ -148,6 +152,16 @@ public class LibraryOnboardingService {
                     .addValue("hasGirlsSection", request.isHasGirlsSection())
                     .addValue("cancellationDeadlineHours", request.getCancellationDeadlineHours())
                     .addValue("allowVisitorPasses", request.isAllowVisitorPasses())
+                    .addValue("enableMonthlyPassSubscription", request.isEnableMonthlyPassSubscription())
+                    .addValue("monthlyLockerMode", request.getMonthlyLockerMode() != null ? request.getMonthlyLockerMode() : "NO_LOCKERS")
+                    .addValue("monthlyLockerPrice", request.getMonthlyLockerPrice() != null ? request.getMonthlyLockerPrice() : BigDecimal.ZERO)
+                    .addValue("dailyLockerMode", request.getDailyLockerMode() != null ? request.getDailyLockerMode() : "NO_LOCKERS")
+                    .addValue("dailyLockerPrice", request.getDailyLockerPrice() != null ? request.getDailyLockerPrice() : BigDecimal.ZERO)
+                    .addValue("overnightLockerCharge", request.getOvernightLockerCharge() != null ? request.getOvernightLockerCharge() : BigDecimal.ZERO)
+                    .addValue("whatsappBusinessNumber", request.getWhatsappBusinessNumber())
+                    .addValue("whatsappConnected", request.isWhatsappConnected())
+                    .addValue("whatsappVerified", request.isWhatsappVerified())
+                    .addValue("hasBookCatalog", request.isHasBookCatalog())
                     .addValue("hasDiscussionRoom", request.isHasDiscussionRoom())
                     .addValue("discussionRoomCapacity", request.getDiscussionRoomCapacity())
                     .addValue("wifiAvailable", request.isWifiAvailable())
@@ -203,7 +217,9 @@ public class LibraryOnboardingService {
                     "is_published, onboarding_source, approval_status, kyc_document, is_free, monthly_price, " +
                     "library_category, allowed_email_domain, min_booking_minutes, max_booking_minutes, " +
                     "max_daily_minutes_per_student, advance_booking_max_minutes, turnover_buffer_minutes, " +
-                    "operating_hours_start, operating_hours_end, allow_visitor_passes" +
+                    "operating_hours_start, operating_hours_end, allow_visitor_passes, enable_monthly_pass_subscription, " +
+                    "monthly_locker_mode, monthly_locker_price, daily_locker_mode, daily_locker_price, overnight_locker_charge, " +
+                    "whatsapp_business_number, whatsapp_connected, whatsapp_verified, has_book_catalog" +
                     ") VALUES (" +
                     ":id, :ownerUuid, :name, :slug, :email, :contactNumber, :address, :city, :locality, :state, " +
                     "ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography, :totalSeats, " +
@@ -215,7 +231,9 @@ public class LibraryOnboardingService {
                     "TRUE, :onboardingSource, 'APPROVED', :kycDocument, :isFree, :monthlyPrice, " +
                     ":libraryCategory, :allowedEmailDomain, :minBookingMinutes, :maxBookingMinutes, " +
                     ":maxDailyMinutesPerStudent, :advanceBookingMaxMinutes, :turnoverBufferMinutes, " +
-                    ":operatingHoursStart, :operatingHoursEnd, :allowVisitorPasses" +
+                    ":operatingHoursStart, :operatingHoursEnd, :allowVisitorPasses, :enableMonthlyPassSubscription, " +
+                    ":monthlyLockerMode, :monthlyLockerPrice, :dailyLockerMode, :dailyLockerPrice, :overnightLockerCharge, " +
+                    ":whatsappBusinessNumber, :whatsappConnected, :whatsappVerified, :hasBookCatalog" +
                     ")";
 
             MapSqlParameterSource libParams = new MapSqlParameterSource()
@@ -238,6 +256,12 @@ public class LibraryOnboardingService {
                     .addValue("hasGirlsSection", request.isHasGirlsSection())
                     .addValue("cancellationDeadlineHours", request.getCancellationDeadlineHours())
                     .addValue("allowVisitorPasses", request.isAllowVisitorPasses())
+                    .addValue("enableMonthlyPassSubscription", request.isEnableMonthlyPassSubscription())
+                    .addValue("monthlyLockerMode", request.getMonthlyLockerMode() != null ? request.getMonthlyLockerMode() : "NO_LOCKERS")
+                    .addValue("monthlyLockerPrice", request.getMonthlyLockerPrice() != null ? request.getMonthlyLockerPrice() : BigDecimal.ZERO)
+                    .addValue("dailyLockerMode", request.getDailyLockerMode() != null ? request.getDailyLockerMode() : "NO_LOCKERS")
+                    .addValue("dailyLockerPrice", request.getDailyLockerPrice() != null ? request.getDailyLockerPrice() : BigDecimal.ZERO)
+                    .addValue("overnightLockerCharge", request.getOvernightLockerCharge() != null ? request.getOvernightLockerCharge() : BigDecimal.ZERO)
                     .addValue("hasDiscussionRoom", request.isHasDiscussionRoom())
                     .addValue("discussionRoomCapacity", request.getDiscussionRoomCapacity())
                     .addValue("wifiAvailable", request.isWifiAvailable())
@@ -269,7 +293,11 @@ public class LibraryOnboardingService {
                     .addValue("advanceBookingMaxMinutes", request.getAdvanceBookingMaxMinutes() != null ? request.getAdvanceBookingMaxMinutes() : 120)
                     .addValue("turnoverBufferMinutes", request.getTurnoverBufferMinutes() != null ? request.getTurnoverBufferMinutes() : 5)
                     .addValue("operatingHoursStart", request.getOperatingHoursStart() != null ? java.sql.Time.valueOf(request.getOperatingHoursStart()) : java.sql.Time.valueOf("08:00:00"))
-                    .addValue("operatingHoursEnd", request.getOperatingHoursEnd() != null ? java.sql.Time.valueOf(request.getOperatingHoursEnd()) : java.sql.Time.valueOf("20:00:00"));
+                    .addValue("operatingHoursEnd", request.getOperatingHoursEnd() != null ? java.sql.Time.valueOf(request.getOperatingHoursEnd()) : java.sql.Time.valueOf("20:00:00"))
+                    .addValue("whatsappBusinessNumber", request.getWhatsappBusinessNumber())
+                    .addValue("whatsappConnected", request.isWhatsappConnected())
+                    .addValue("whatsappVerified", request.isWhatsappVerified())
+                    .addValue("hasBookCatalog", request.isHasBookCatalog());
 
             jdbcTemplate.update(insertLibrarySql, libParams);
         }
@@ -297,9 +325,9 @@ public class LibraryOnboardingService {
         }
 
         // Insert seats in high-performance JDBC batch (80x faster for 200+ seat layouts)
-        String insertSeatSql = "INSERT INTO seat_desks (id, library_id, seat_code, row_idx, col_idx, is_girls_only, is_sofa, is_free, has_power_socket, dist_to_ac_m, dist_to_door_m, seat_type, custom_type_name, custom_type_icon) " +
-                "VALUES (:id, :libraryId, :seatCode, :rowIdx, :colIdx, :isGirlsOnly, :isSofa, :isFree, :hasPowerSocket, :distToAcM, :distToDoorM, :seatType, :customTypeName, :customTypeIcon) " +
-                "ON CONFLICT (library_id, seat_code) DO UPDATE SET is_girls_only=EXCLUDED.is_girls_only, is_sofa=EXCLUDED.is_sofa, is_free=EXCLUDED.is_free, seat_type=EXCLUDED.seat_type, custom_type_name=EXCLUDED.custom_type_name, custom_type_icon=EXCLUDED.custom_type_icon";
+        String insertSeatSql = "INSERT INTO seat_desks (id, library_id, seat_code, row_idx, col_idx, is_girls_only, is_sofa, is_free, has_power_socket, dist_to_ac_m, dist_to_door_m, seat_type, custom_type_name, custom_type_icon, allocation_type) " +
+                "VALUES (:id, :libraryId, :seatCode, :rowIdx, :colIdx, :isGirlsOnly, :isSofa, :isFree, :hasPowerSocket, :distToAcM, :distToDoorM, :seatType, :customTypeName, :customTypeIcon, :allocationType) " +
+                "ON CONFLICT (library_id, seat_code) DO UPDATE SET is_girls_only=EXCLUDED.is_girls_only, is_sofa=EXCLUDED.is_sofa, is_free=EXCLUDED.is_free, seat_type=EXCLUDED.seat_type, custom_type_name=EXCLUDED.custom_type_name, custom_type_icon=EXCLUDED.custom_type_icon, allocation_type=EXCLUDED.allocation_type";
 
         List<MapSqlParameterSource> batchParams = new java.util.ArrayList<>();
         for (LibraryOnboardingRequest.SeatDto seat : request.getSeats()) {
@@ -318,6 +346,7 @@ public class LibraryOnboardingService {
                     .addValue("seatType", seat.getSeatType() != null ? seat.getSeatType() : "DESK")
                     .addValue("customTypeName", seat.getCustomTypeName())
                     .addValue("customTypeIcon", seat.getCustomTypeIcon())
+                    .addValue("allocationType", seat.getAllocationType() != null ? seat.getAllocationType() : "NON_RESERVED")
             );
         }
         if (!batchParams.isEmpty()) {
@@ -566,7 +595,12 @@ public class LibraryOnboardingService {
                 "books_capacity, available_books_data, base_desk_price_daily, base_desk_price_monthly, sofa_price_daily, sofa_price_monthly, " +
                 "locker_mode, layout_type, layout_file_url, proof_doc_type, proof_doc_number, proof_doc_url, kyc_document, " +
                 "approval_status, rejection_reason, is_published, is_free, monthly_price, library_category, allowed_email_domain, " +
-                "COALESCE(allow_visitor_passes, TRUE) as allow_visitor_passes, created_at " +
+                "COALESCE(allow_visitor_passes, TRUE) as allow_visitor_passes, COALESCE(enable_monthly_pass_subscription, TRUE) as enable_monthly_pass_subscription, " +
+                "COALESCE(monthly_locker_mode, 'NO_LOCKERS') as monthly_locker_mode, COALESCE(monthly_locker_price, 0) as monthly_locker_price, " +
+                "COALESCE(daily_locker_mode, 'NO_LOCKERS') as daily_locker_mode, COALESCE(daily_locker_price, 0) as daily_locker_price, " +
+                "COALESCE(overnight_locker_charge, 0) as overnight_locker_charge, " +
+                "whatsapp_business_number, COALESCE(whatsapp_connected, FALSE) as whatsapp_connected, " +
+                "COALESCE(whatsapp_verified, FALSE) as whatsapp_verified, COALESCE(has_book_catalog, FALSE) as has_book_catalog, created_at " +
                 "FROM libraries WHERE owner_id = CAST(:ownerId AS uuid) ORDER BY created_at DESC LIMIT 1";
         try {
             Map<String, Object> lib = new LinkedHashMap<>(jdbcTemplate.queryForMap(sql, new MapSqlParameterSource("ownerId", ownerId)));
@@ -578,7 +612,7 @@ public class LibraryOnboardingService {
             lib.put("shifts", shifts);
 
             // Fetch seats
-            String seatSql = "SELECT seat_code, row_idx, col_idx, is_girls_only, is_sofa, is_free, has_power_socket, seat_type, custom_type_name, custom_type_icon FROM seat_desks WHERE library_id = :libraryId";
+            String seatSql = "SELECT id, seat_code, row_idx, col_idx, is_girls_only, is_sofa, is_free, has_power_socket, seat_type, custom_type_name, custom_type_icon, COALESCE(allocation_type, 'NON_RESERVED') as allocation_type, reserved_status FROM seat_desks WHERE library_id = :libraryId";
             List<Map<String, Object>> seats = jdbcTemplate.queryForList(seatSql, new MapSqlParameterSource("libraryId", libraryId));
             lib.put("seats", seats);
 

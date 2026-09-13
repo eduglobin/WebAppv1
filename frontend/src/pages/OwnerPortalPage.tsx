@@ -30,6 +30,12 @@ interface LibraryData {
   totalSeats: number;
   lockerMode: string;
   allowVisitorPasses?: boolean;
+  enableMonthlyPassSubscription?: boolean;
+  monthlyLockerMode?: string;
+  monthlyLockerPrice?: number;
+  dailyLockerMode?: string;
+  dailyLockerPrice?: number;
+  overnightLockerCharge?: number;
   acAvailable?: boolean;
   hasGirlsSection?: boolean;
   hasDiscussionRoom?: boolean;
@@ -76,6 +82,12 @@ function normalizeLibraryData(raw: any): LibraryData | null {
     totalSeats: Number(raw.totalSeats || raw.total_seats || 30),
     lockerMode: raw.lockerMode || raw.locker_mode || 'PAID_MANAGED',
     allowVisitorPasses: raw.allowVisitorPasses !== undefined ? Boolean(raw.allowVisitorPasses) : (raw.allow_visitor_passes !== undefined ? Boolean(raw.allow_visitor_passes) : true),
+    enableMonthlyPassSubscription: raw.enableMonthlyPassSubscription !== undefined ? Boolean(raw.enableMonthlyPassSubscription) : (raw.enable_monthly_pass_subscription !== undefined ? Boolean(raw.enable_monthly_pass_subscription) : true),
+    monthlyLockerMode: raw.monthlyLockerMode || raw.monthly_locker_mode || 'NO_LOCKERS',
+    monthlyLockerPrice: Number(raw.monthlyLockerPrice || raw.monthly_locker_price || 0),
+    dailyLockerMode: raw.dailyLockerMode || raw.daily_locker_mode || 'NO_LOCKERS',
+    dailyLockerPrice: Number(raw.dailyLockerPrice || raw.daily_locker_price || 0),
+    overnightLockerCharge: Number(raw.overnightLockerCharge || raw.overnight_locker_charge || 0),
     acAvailable: raw.acAvailable !== undefined ? Boolean(raw.acAvailable) : Boolean(raw.ac_available),
     hasGirlsSection: raw.hasGirlsSection !== undefined ? Boolean(raw.hasGirlsSection) : Boolean(raw.has_girls_section),
     hasDiscussionRoom: raw.hasDiscussionRoom !== undefined ? Boolean(raw.hasDiscussionRoom) : Boolean(raw.has_discussion_room),

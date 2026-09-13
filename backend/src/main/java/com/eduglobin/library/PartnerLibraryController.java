@@ -388,7 +388,18 @@ public class PartnerLibraryController {
                 "b.id as booking_id, b.booking_reference, b.status as b_status, b.checked_in_at, b.valid_from, b.valid_until, b.amount_paid, b.locker_fee, " +
                 "b.college_id_number, b.college_email, b.student_age, b.degree_program, b.branch_department, " +
                 "p.full_name as student_name, COALESCE(p.phone, 'N/A') as student_phone, 'Not Provided' as student_aadhaar, " +
-                "(SELECT city FROM student_library_profiles WHERE student_id = b.student_id AND library_id = sd.library_id LIMIT 1) as student_city " +
+                "(SELECT city FROM student_library_profiles WHERE student_id = b.student_id AND library_id = sd.library_id LIMIT 1) as student_city, " +
+                "COALESCE(" +
+                "  (b.locker_id IS NOT NULL), " +
+                "  (SELECT mse.has_locker FROM monthly_seat_enrollments mse WHERE mse.seat_id = sd.id AND mse.status IN ('ACTIVE', 'GRACE') LIMIT 1), " +
+                "  (SELECT vtp.has_locker FROM visitor_temp_passes vtp WHERE vtp.seat_id = sd.id AND vtp.valid_until > CURRENT_TIMESTAMP LIMIT 1), " +
+                "  FALSE" +
+                ") as has_locker, " +
+                "COALESCE(" +
+                "  (SELECT lk.locker_code FROM lockers lk WHERE lk.id = b.locker_id LIMIT 1), " +
+                "  (SELECT lk.locker_code FROM lockers lk JOIN monthly_seat_enrollments mse ON mse.locker_id = lk.id WHERE mse.seat_id = sd.id AND mse.status IN ('ACTIVE', 'GRACE') LIMIT 1), " +
+                "  (SELECT lk.locker_code FROM lockers lk JOIN visitor_temp_passes vtp ON vtp.locker_id = lk.id WHERE vtp.seat_id = sd.id AND vtp.valid_until > CURRENT_TIMESTAMP LIMIT 1) " +
+                ") as locker_code " +
                 "FROM seat_desks sd " +
                 "LEFT JOIN bookings b ON b.seat_id = sd.id AND b.status IN ('BOOKED', 'LOCKED', 'IN_USE') " +
                 "LEFT JOIN profiles p ON b.student_id = p.id " +
@@ -419,6 +430,8 @@ public class PartnerLibraryController {
             seatData.put("seatType", rs.getString("seat_type"));
             seatData.put("customTypeName", rs.getString("custom_type_name"));
             seatData.put("customTypeIcon", rs.getString("custom_type_icon"));
+            seatData.put("hasLocker", rs.getBoolean("has_locker"));
+            seatData.put("lockerCode", rs.getString("locker_code"));
 
             if ("IN_USE".equals(seatStatus) || ("WAITING".equals(seatStatus) && "BOOKED".equals(bStatus))) {
                 Map<String, Object> student = new java.util.HashMap<>();
@@ -481,6 +494,79 @@ public class PartnerLibraryController {
             "libraryId", libraryId,
             "allowVisitorPasses", allowVisitorPasses,
             "message", "Visitor pass policy updated to: " + (allowVisitorPasses ? "ENABLED" : "DISABLED")
+        )));
+    }
+
+    /**
+     * Operational toggle: Enable or disable Dedicated Monthly Pass Subscription Mode.
+     */
+    @PutMapping("/libraries/{libraryId}/monthly-subscription-config")
+    @PreAuthorize("hasAnyRole('LIBRARY_OWNER', 'SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> updateMonthlySubscriptionConfig(
+            @PathVariable UUID libraryId,
+            @RequestBody Map<String, Object> body) {
+        
+        Boolean enableMonthlyPassSubscription = body.get("enableMonthlyPassSubscription") instanceof Boolean 
+                ? (Boolean) body.get("enableMonthlyPassSubscription") 
+                : Boolean.parseBoolean(String.valueOf(body.get("enableMonthlyPassSubscription")));
+
+        namedJdbc.update(
+            "UPDATE libraries SET enable_monthly_pass_subscription = :enableMonthlyPassSubscription, updated_at = NOW() WHERE id = :id",
+            new MapSqlParameterSource().addValue("id", libraryId).addValue("enableMonthlyPassSubscription", enableMonthlyPassSubscription)
+        );
+
+        return ResponseEntity.ok(ApiResponse.success(Map.of(
+            "libraryId", libraryId,
+            "enableMonthlyPassSubscription", enableMonthlyPassSubscription,
+            "message", "Monthly subscription mode updated to: " + (enableMonthlyPassSubscription ? "ENABLED" : "DISABLED")
+        )));
+    }
+
+    /**
+     * Operational settings: Update Monthly & Daily Locker Modes and Pricing.
+     */
+    @PutMapping("/libraries/{libraryId}/locker-config")
+    @PreAuthorize("hasAnyRole('LIBRARY_OWNER', 'SUPER_ADMIN')")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> updateLockerConfig(
+            @PathVariable UUID libraryId,
+            @RequestBody Map<String, Object> body) {
+        
+        String monthlyLockerMode = (String) body.getOrDefault("monthlyLockerMode", "NO_LOCKERS");
+        java.math.BigDecimal monthlyLockerPrice = body.get("monthlyLockerPrice") != null 
+                ? new java.math.BigDecimal(String.valueOf(body.get("monthlyLockerPrice"))) 
+                : java.math.BigDecimal.ZERO;
+
+        String dailyLockerMode = (String) body.getOrDefault("dailyLockerMode", "NO_LOCKERS");
+        java.math.BigDecimal dailyLockerPrice = body.get("dailyLockerPrice") != null 
+                ? new java.math.BigDecimal(String.valueOf(body.get("dailyLockerPrice"))) 
+                : java.math.BigDecimal.ZERO;
+
+        java.math.BigDecimal overnightLockerCharge = body.get("overnightLockerCharge") != null 
+                ? new java.math.BigDecimal(String.valueOf(body.get("overnightLockerCharge"))) 
+                : java.math.BigDecimal.ZERO;
+
+        namedJdbc.update(
+            "UPDATE libraries SET " +
+            "monthly_locker_mode = :monthlyLockerMode, monthly_locker_price = :monthlyLockerPrice, " +
+            "daily_locker_mode = :dailyLockerMode, daily_locker_price = :dailyLockerPrice, " +
+            "overnight_locker_charge = :overnightLockerCharge, updated_at = NOW() WHERE id = :id",
+            new MapSqlParameterSource()
+                .addValue("id", libraryId)
+                .addValue("monthlyLockerMode", monthlyLockerMode)
+                .addValue("monthlyLockerPrice", monthlyLockerPrice)
+                .addValue("dailyLockerMode", dailyLockerMode)
+                .addValue("dailyLockerPrice", dailyLockerPrice)
+                .addValue("overnightLockerCharge", overnightLockerCharge)
+        );
+
+        return ResponseEntity.ok(ApiResponse.success(Map.of(
+            "libraryId", libraryId,
+            "monthlyLockerMode", monthlyLockerMode,
+            "monthlyLockerPrice", monthlyLockerPrice,
+            "dailyLockerMode", dailyLockerMode,
+            "dailyLockerPrice", dailyLockerPrice,
+            "overnightLockerCharge", overnightLockerCharge,
+            "message", "Locker settings updated successfully"
         )));
     }
 }

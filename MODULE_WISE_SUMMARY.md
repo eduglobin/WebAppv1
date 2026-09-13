@@ -826,7 +826,22 @@ Governs seat allocation models based strictly on `library_category` derived duri
 
 ---
 
-### Summary Table — All System Database Migrations (V1 – V18)
+---
+
+## Modules 51, 54, 67: Phase 2 Locker Charges & Owner-Visibility Engine
+
+### Backend Components
+*   **[`PrivateLibraryManagementService.java`](file:///e:/EduGlobin/backend/src/main/java/com/eduglobin/library/PrivateLibraryManagementService.java)**
+    *   **Module 51 Monthly Enrollment**: Supports optional monthly locker add-on (`has_locker`, `locker_id`, `monthly_locker_fee`). Marks locker as `BOOKED`, maintains seat fee & locker fee as two distinct line items, and auto-releases locker back to `AVAILABLE` upon early vacate or lapsed grace period.
+    *   **Module 54 & 67 Visitor Temp Pass**: Accountless visitor temp pass creation supporting locker duration pricing (`locker_fee`), locker reservation, auto-release upon pass expiry (`valid_until`), and automated WhatsApp confirmation.
+    *   **Owner-Visibility Gap Closure**: Surfaces `hasLocker` boolean and `lockerCode` across live seat grid status (`PartnerLibraryController.java`), owner CRM roster (`getOwnerCrmData`), and visitor audit log (`getVisitorAuditLog`).
+*   **[`PartnerReportsService.java`](file:///e:/EduGlobin/backend/src/main/java/com/eduglobin/reporting/PartnerReportsService.java)**
+    *   Calculates a dedicated **"Locker Revenue"** line item across all 3 booking paths (self-booking, monthly enrollment, visitor passes) on the owner dashboard KPI payload (`ReportsDashboardDTO`).
+    *   Adds explicit `Seat Fee (₹)`, `Locker Fee (₹)`, and `Has Locker` columns to `getBookingHistory` (Report 2) and `getStudentLookupReport` (Report 6).
+
+---
+
+### Summary Table — All System Database Migrations (V1 – V31)
 
 | Migration | Category | Core Schema Additions & Purpose |
 |---|---|---|
@@ -848,4 +863,8 @@ Governs seat allocation models based strictly on `library_category` derived duri
 | [`V16__visiting_circulation_students.sql`](file:///e:/EduGlobin/backend/src/main/resources/db/migration/V16__visiting_circulation_students.sql) | Visitors | `visiting_circulation_students` table, 40-min limit, direct owner exit, exit approval flow |
 | [`V17__institute_flexible_slots_and_queue.sql`](file:///e:/EduGlobin/backend/src/main/resources/db/migration/V17__institute_flexible_slots_and_queue.sql) | Institute Flexible & Queue | Flexible slot rule configuration columns on `libraries` and `seat_queue_entries` table |
 | [`V18__institute_completion.sql`](file:///e:/EduGlobin/backend/src/main/resources/db/migration/V18__institute_completion.sql) | Institute Completion | `item_log_entries` table, `vacate_token_expires_at` column, and response deadline additions |
+| [`V27__add_allow_visitor_passes_column.sql`](file:///e:/EduGlobin/backend/src/main/resources/db/migration/V27__add_allow_visitor_passes_column.sql) | Library Config | `allow_visitor_passes` toggle column on `libraries` |
+| [`V29__private_library_model_modules_48_to_57.sql`](file:///e:/EduGlobin/backend/src/main/resources/db/migration/V29__private_library_model_modules_48_to_57.sql) | Private Library Model | `monthly_seat_enrollments`, `visitor_temp_passes`, `reserved_seat_attendance_log` |
+| [`V30__monthly_subscription_toggle_and_locker_modes.sql`](file:///e:/EduGlobin/backend/src/main/resources/db/migration/V30__monthly_subscription_toggle_and_locker_modes.sql) | Subscription & Lockers | Private library monthly subscription toggle and locker rental modes |
+| [`V31__extend_locker_charges_monthly_and_visitor.sql`](file:///e:/EduGlobin/backend/src/main/resources/db/migration/V31__extend_locker_charges_monthly_and_visitor.sql) | Phase 2 Locker Charges | Extends `has_locker`, `locker_id`, `monthly_locker_fee`/`locker_fee` to `monthly_seat_enrollments` & `visitor_temp_passes` |
 

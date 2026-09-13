@@ -72,6 +72,12 @@ public class LibraryDetailController {
                 "COALESCE(l.library_category, 'PRIVATE') as library_category, " +
                 "COALESCE(l.allowed_email_domain, 'iitbhilai.ac.in') as allowed_email_domain, " +
                 "COALESCE(l.allow_visitor_passes, TRUE) as allow_visitor_passes, " +
+                "COALESCE(l.enable_monthly_pass_subscription, TRUE) as enable_monthly_pass_subscription, " +
+                "COALESCE(l.monthly_locker_mode, 'NO_LOCKERS') as monthly_locker_mode, " +
+                "COALESCE(l.monthly_locker_price, 0) as monthly_locker_price, " +
+                "COALESCE(l.daily_locker_mode, 'NO_LOCKERS') as daily_locker_mode, " +
+                "COALESCE(l.daily_locker_price, 0) as daily_locker_price, " +
+                "COALESCE(l.overnight_locker_charge, 0) as overnight_locker_charge, " +
                 "l.base_desk_price_monthly, l.base_desk_price_daily, " +
                 "COALESCE((SELECT COUNT(*) FROM seat_desks sd WHERE sd.library_id = l.id AND sd.current_status = 'AVAILABLE'), 0) as available_seats, " +
                 "ST_Y(l.geo_point::geometry) as lat, ST_X(l.geo_point::geometry) as lng " +

@@ -14,6 +14,8 @@ spring:
       connection-timeout: 30000
       # Keep-alive important for Supabase connection pooler
       keepalive-time: 60000
+      data-source-properties:
+        prepareThreshold: 0
 
   # ── Flyway ────────────────────────────────────────────────────────────
   flyway:

@@ -72,12 +72,23 @@ public class PartnerReportsService {
         long occupied = ((Number) occMap.getOrDefault("occupied", 0)).longValue();
         long total = ((Number) occMap.getOrDefault("total", 0)).longValue();
 
+        // 4. Locker Revenue calculation across all 3 booking paths
+        String lockerRevSql = """
+            SELECT
+              COALESCE((SELECT SUM(locker_fee) FROM bookings WHERE library_id = :libraryId), 0) +
+              COALESCE((SELECT SUM(monthly_locker_fee) FROM monthly_seat_enrollments WHERE library_id = :libraryId), 0) +
+              COALESCE((SELECT SUM(locker_fee) FROM visitor_temp_passes WHERE library_id = :libraryId), 0) AS total_locker_rev
+            """;
+        Double lockerRev = jdbcTemplate.queryForObject(lockerRevSql, new MapSqlParameterSource("libraryId", libraryId), Double.class);
+        double lockerRevenue = lockerRev != null ? lockerRev : 0.0;
+
         return new ReportsDashboardDTO(
                 entriesToday,
                 entriesThisWeek,
                 entriesThisMonth,
                 activeProfiles,
-                new ReportsDashboardDTO.OccupancyDTO(occupied, total)
+                new ReportsDashboardDTO.OccupancyDTO(occupied, total),
+                lockerRevenue
         );
     }
 
@@ -125,7 +136,8 @@ public class PartnerReportsService {
         StringBuilder sql = new StringBuilder("""
             SELECT COALESCE(slp.institute_id_number, b.college_id_number, p.full_name, 'N/A') AS student_identifier,
                    sd.seat_code, b.valid_from, b.valid_until,
-                   b.status, b.pass_type, b.booking_source, b.amount_paid
+                   b.status, b.pass_type, b.booking_source, b.amount_paid,
+                   COALESCE(b.locker_fee, 0) AS locker_fee, (b.locker_id IS NOT NULL OR COALESCE(b.locker_fee, 0) > 0) AS has_locker
             FROM bookings b
             JOIN seat_desks sd ON sd.id = b.seat_id
             JOIN profiles p ON p.id = b.student_id
@@ -147,7 +159,7 @@ public class PartnerReportsService {
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(sql.toString(), params);
 
         List<String> headers = List.of(
-                "Student / ID", "Seat Code", "Valid From", "Valid Until", "Status", "Pass Type", "Source", "Amount (₹)"
+                "Student / ID", "Seat Code", "Valid From", "Valid Until", "Status", "Pass Type", "Source", "Seat Fee (₹)", "Locker Fee (₹)", "Has Locker"
         );
 
         List<List<String>> datasetRows = new ArrayList<>();
@@ -160,7 +172,9 @@ public class PartnerReportsService {
                     valStr(r.get("status")),
                     valStr(r.get("pass_type")),
                     valStr(r.get("booking_source")),
-                    r.get("amount_paid") != null ? String.valueOf(r.get("amount_paid")) : "0.00"
+                    r.get("amount_paid") != null ? String.valueOf(r.get("amount_paid")) : "0.00",
+                    r.get("locker_fee") != null ? String.valueOf(r.get("locker_fee")) : "0.00",
+                    Boolean.TRUE.equals(r.get("has_locker")) ? "YES" : "NO"
             ));
         }
 

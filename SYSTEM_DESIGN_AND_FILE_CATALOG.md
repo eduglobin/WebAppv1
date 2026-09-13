@@ -169,6 +169,10 @@ graph TD
 | **`V15__book_circulation_schema.sql`** | `library_book_catalog`, `book_loans`, and `student_library_profiles` soft-deactivation columns (`is_active`, `deactivated_at`, `deactivated_by_id`, `deactivation_reason`). |
 | **`V16__visiting_circulation_students.sql`** | `visiting_circulation_students` table tracking non-desk circulation visitors, 40-minute limit, direct owner exit, and exit approval workflow. |
 | **`V17__institute_flexible_slots_and_queue.sql`** | Flexible slot rule configuration columns on `libraries` (`min_booking_minutes`, `max_booking_minutes`, `max_daily_minutes_per_student`, `advance_booking_max_minutes`, `turnover_buffer_minutes`, `operating_hours_start`, `operating_hours_end`) and `seat_queue_entries` table. |
+| **`V27__add_allow_visitor_passes_column.sql`** | Operational `allow_visitor_passes` toggle column on `libraries`. |
+| **`V29__private_library_model_modules_48_to_57.sql`** | Private Library Model tables (`monthly_seat_enrollments`, `visitor_temp_passes`, `reserved_seat_attendance_log`, `whatsapp_message_templates`). |
+| **`V30__monthly_subscription_toggle_and_locker_modes.sql`** | Private library monthly subscription toggle and locker rental modes. |
+| **`V31__extend_locker_charges_monthly_and_visitor.sql`** | Phase 2 Locker Charges — extends locker columns (`has_locker`, `locker_id`, `monthly_locker_fee`/`locker_fee`) to `monthly_seat_enrollments` and `visitor_temp_passes`. |
 
 ---
 
@@ -189,5 +193,10 @@ graph TD
   - `BookCirculationService.java`: Catalog additions, counter book issuing, reissuing, returning, visitor check-in, 40-min limit tracking, direct exit, student exit request approval, scheduled overdue sweep, profile soft-deactivation.
   - `BookCirculationController.java`: REST controller exposing partner circulation desk, visitor management, & student loan APIs.
 - **`com.eduglobin.library`**:
-  - `PartnerLibraryController.java`: Library onboarding, layout blueprint matrix builder, seat status APIs.
+  - `PartnerLibraryController.java`: Library onboarding, layout blueprint matrix builder, live seat status with `hasLocker` & `lockerCode` indicators across all 3 booking paths.
+  - `PrivateLibraryManagementService.java`: Monthly seat enrollments (Module 51) with locker add-on & lifecycle held/release, accountless visitor temp passes (Module 54/67) with locker duration pricing, owner CRM roster views with locker columns, visitor audit log.
+  - `PrivateLibraryManagementController.java`: Endpoints for monthly enrollments, visitor passes, CRM dashboard, and visitor audit logs.
   - `SimpleCountSeatGenerator.java`: Seat grid matrix layout generator.
+- **`com.eduglobin.reporting`**:
+  - `PartnerReportsService.java`: Owner Reports & Dashboard KPIs with separate "Locker Revenue" line item across all 3 booking paths, and `hasLocker`/`lockerFee` columns in `getBookingHistory` and `getStudentLookupReport`.
+  - `ReportsDashboardDTO.java`: Standardized DTO holding dashboard metrics including `lockerRevenue`.

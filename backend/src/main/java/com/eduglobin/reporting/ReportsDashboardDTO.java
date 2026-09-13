@@ -5,7 +5,8 @@ public record ReportsDashboardDTO(
         long entriesThisWeek,
         long entriesThisMonth,
         long activeStudentProfiles,
-        OccupancyDTO currentOccupancy
+        OccupancyDTO currentOccupancy,
+        double lockerRevenue
 ) {
     public record OccupancyDTO(long occupied, long total) {}
 }

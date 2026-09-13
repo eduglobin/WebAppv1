@@ -41,6 +41,16 @@ public class LibraryOnboardingRequest {
     private int girlsSafetyScore = 85;
     private int cancellationDeadlineHours = 24;
     private boolean allowVisitorPasses = true;
+    private boolean enableMonthlyPassSubscription = true;
+    private String monthlyLockerMode = "NO_LOCKERS"; // FREE, PAID, NO_LOCKERS
+    private BigDecimal monthlyLockerPrice = BigDecimal.ZERO;
+    private String dailyLockerMode = "NO_LOCKERS"; // FREE, PAID, NO_LOCKERS
+    private BigDecimal dailyLockerPrice = BigDecimal.ZERO;
+    private BigDecimal overnightLockerCharge = BigDecimal.ZERO;
+    private String whatsappBusinessNumber;
+    private boolean whatsappConnected = false;
+    private boolean whatsappVerified = false;
+    private boolean hasBookCatalog = false;
 
     // Flexible Slot Rule Parameters (Institute Libraries)
     private Integer minBookingMinutes = 30;
@@ -282,20 +292,51 @@ public class LibraryOnboardingRequest {
         public void setSeatTypePrices(String seatTypePrices) { this.seatTypePrices = seatTypePrices; }
     }
 
+    public boolean isEnableMonthlyPassSubscription() { return enableMonthlyPassSubscription; }
+    public void setEnableMonthlyPassSubscription(boolean enableMonthlyPassSubscription) { this.enableMonthlyPassSubscription = enableMonthlyPassSubscription; }
+
+    public String getMonthlyLockerMode() { return monthlyLockerMode; }
+    public void setMonthlyLockerMode(String monthlyLockerMode) { this.monthlyLockerMode = monthlyLockerMode; }
+
+    public BigDecimal getMonthlyLockerPrice() { return monthlyLockerPrice; }
+    public void setMonthlyLockerPrice(BigDecimal monthlyLockerPrice) { this.monthlyLockerPrice = monthlyLockerPrice; }
+
+    public String getDailyLockerMode() { return dailyLockerMode; }
+    public void setDailyLockerMode(String dailyLockerMode) { this.dailyLockerMode = dailyLockerMode; }
+
+    public BigDecimal getDailyLockerPrice() { return dailyLockerPrice; }
+    public void setDailyLockerPrice(BigDecimal dailyLockerPrice) { this.dailyLockerPrice = dailyLockerPrice; }
+
+    public BigDecimal getOvernightLockerCharge() { return overnightLockerCharge; }
+    public void setOvernightLockerCharge(BigDecimal overnightLockerCharge) { this.overnightLockerCharge = overnightLockerCharge; }
+
+    public String getWhatsappBusinessNumber() { return whatsappBusinessNumber; }
+    public void setWhatsappBusinessNumber(String whatsappBusinessNumber) { this.whatsappBusinessNumber = whatsappBusinessNumber; }
+
+    public boolean isWhatsappConnected() { return whatsappConnected; }
+    public void setWhatsappConnected(boolean whatsappConnected) { this.whatsappConnected = whatsappConnected; }
+
+    public boolean isWhatsappVerified() { return whatsappVerified; }
+    public void setWhatsappVerified(boolean whatsappVerified) { this.whatsappVerified = whatsappVerified; }
+
+    public boolean isHasBookCatalog() { return hasBookCatalog; }
+    public void setHasBookCatalog(boolean hasBookCatalog) { this.hasBookCatalog = hasBookCatalog; }
+
     public static class SeatDto {
         @NotBlank
         private String seatCode;
         private int rowIdx;
         private int colIdx;
         private boolean isGirlsOnly;
-        private boolean isSofa = false;
-        private boolean isFree = false;
+        private boolean isSofa;
+        private boolean isFree;
         private boolean hasPowerSocket = true;
-        private Double distToAcM;
-        private Double distToDoorM;
-        private String seatType = "DESK";
+        private Double distToAcM = 5.0;
+        private Double distToDoorM = 10.0;
+        private String seatType = "REGULAR";
         private String customTypeName;
         private String customTypeIcon;
+        private String allocationType = "NON_RESERVED"; // RESERVED, NON_RESERVED
 
         public String getSeatCode() { return seatCode; }
         public void setSeatCode(String seatCode) { this.seatCode = seatCode; }
@@ -340,5 +381,8 @@ public class LibraryOnboardingRequest {
 
         public String getCustomTypeIcon() { return customTypeIcon; }
         public void setCustomTypeIcon(String customTypeIcon) { this.customTypeIcon = customTypeIcon; }
+
+        public String getAllocationType() { return allocationType; }
+        public void setAllocationType(String allocationType) { this.allocationType = allocationType; }
     }
 }

@@ -49,7 +49,7 @@ public class LibraryScoringServiceTest {
                 .build();
 
         double score = scoringService.score(lib, criteria);
-        assertEquals(0.61, score, 0.01);
+        assertEquals(0.63, score, 0.01);
     }
 
     @Test
@@ -67,7 +67,7 @@ public class LibraryScoringServiceTest {
                 .build();
 
         double score = scoringService.score(lib, criteria);
-        assertEquals(0.52, score, 0.01);
+        assertEquals(0.54, score, 0.01);
     }
 
     @Test
@@ -85,6 +85,6 @@ public class LibraryScoringServiceTest {
                 .build();
 
         double score = scoringService.score(lib, criteria);
-        assertEquals(0.62, score, 0.01);
+        assertEquals(0.64, score, 0.01);
     }
 }

@@ -90,6 +90,10 @@ EduGlobin is a multi-tenant, high-concurrency Study Space, Seat Booking, and Phy
 - `V15__book_circulation_schema.sql`: Physical book catalog, book loan history, profile soft-deactivation.
 - `V16__visiting_circulation_students.sql`: Visiting circulation students table, 40-minute limit, direct owner exit, exit approval flow.
 - `V17__institute_flexible_slots_and_queue.sql`: Institute flexible slot configuration columns on `libraries` and `seat_queue_entries` FIFO seat queue table.
+- `V27__add_allow_visitor_passes_column.sql`: Operational `allow_visitor_passes` toggle column on `libraries`.
+- `V29__private_library_model_modules_48_to_57.sql`: Private Library Model tables (`monthly_seat_enrollments`, `visitor_temp_passes`, `reserved_seat_attendance_log`).
+- `V30__monthly_subscription_toggle_and_locker_modes.sql`: Private library monthly subscription toggle and locker rental modes.
+- `V31__extend_locker_charges_monthly_and_visitor.sql`: Phase 2 Locker Charges — extends locker columns (`has_locker`, `locker_id`, `monthly_locker_fee`/`locker_fee`) to `monthly_seat_enrollments` and `visitor_temp_passes`.
 
 ---
 
