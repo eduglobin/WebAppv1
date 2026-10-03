@@ -358,3 +358,158 @@ Student books a seat → POST /resources/lock → POST /bookings/checkout
 | `student_crm_records` | Per-library student enrollment and fee tracking |
 | `complaint_tickets` | Support tickets (library-specific + platform-wide) |
 
+---
+
+## Day 6 — CRM, Private Library Leads, Subscriptions, Library Photos & Walk-In Improvements
+
+### New Backend Files
+
+#### [`PrivateCrmController.java`](file:///e:/EduGlobin/backend/src/main/java/com/eduglobin/crm/PrivateCrmController.java) [NEW]
+- Exposes four partner-scoped CRM endpoints under `GET /api/v1/partner/libraries/{id}/crm/*`.
+- **`/attendance`** — returns daily attendance records for all enrolled students at the library.
+- **`/roster`** — returns the full enrolled student roster with subscription and fee status.
+- **`/payment-reminders`** — lists students with overdue or upcoming fee payments.
+- **`/summary`** — aggregated CRM metrics (total enrolled, revenue, attendance rate) for owner dashboard widgets.
+
+#### [`PrivateCrmService.java`](file:///e:/EduGlobin/backend/src/main/java/com/eduglobin/crm/PrivateCrmService.java) [NEW]
+- Business logic layer backing all four CRM endpoints, querying `student_crm_records`, `bookings`, and `student_wallets`.
+- Computes payment overdue state by comparing subscription end dates against current timestamp.
+- Provides attendance aggregations using booking check-in timestamps grouped by calendar day.
+
+#### [`PrivateLibraryLead.java`](file:///e:/EduGlobin/backend/src/main/java/com/eduglobin/library/PrivateLibraryLead.java) [NEW]
+- Spring Data JDBC entity mapping the `private_library_leads` table introduced in V34.
+- Represents a prospective student lead captured when a student expresses interest in a private (unlisted) library.
+- Fields: `id`, `libraryId`, `studentName`, `phone`, `message`, `createdAt`, `status` (`NEW` / `CONTACTED` / `CONVERTED`).
+
+#### [`PrivateLibraryLeadRepository.java`](file:///e:/EduGlobin/backend/src/main/java/com/eduglobin/library/PrivateLibraryLeadRepository.java) [NEW]
+- Spring Data JDBC `CrudRepository` for `PrivateLibraryLead` entity.
+- Identified as a JDBC repository; excluded from Redis scan (logged at startup).
+
+#### [`PrivateLibraryLeadController.java`](file:///e:/EduGlobin/backend/src/main/java/com/eduglobin/library/PrivateLibraryLeadController.java) [NEW]
+- REST controller exposing lead capture (`POST`) and lead listing for owners (`GET`).
+- Allows anonymous students to submit interest leads; only authenticated library owners can view their lead list.
+
+#### [`AdminSubscriptionController.java`](file:///e:/EduGlobin/backend/src/main/java/com/eduglobin/admin/AdminSubscriptionController.java) [NEW]
+- Admin-only REST controller at `/api/v1/admin/subscription-categories` for managing the platform subscription catalog.
+- **`POST /`** — creates a new subscription category (`subscription_categories` table).
+- **`POST /{categoryId}/plans`** — adds a priced plan under a category (`subscription_plans` table).
+- **`GET /`** — retrieves all categories with their nested plans, ordered by `display_order`.
+
+#### [`LibraryPhotoController.java`](file:///e:/EduGlobin/backend/src/main/java/com/eduglobin/library/LibraryPhotoController.java) [NEW]
+- Manages library photo metadata after client-side direct upload to Supabase Storage.
+- **`GET /api/v1/libraries/{id}/photos`** — public, unauthenticated endpoint returning ordered photo list.
+- **`POST /api/v1/owner/libraries/{id}/photos`** — owner saves a Supabase Storage public URL with caption and display order; validates library ownership before insert.
+- **`DELETE /api/v1/owner/libraries/{id}/photos/{photoId}`** — owner or SUPER_ADMIN soft-deletes a photo record.
+- **`PUT /api/v1/owner/libraries/{id}/photos/reorder`** — bulk update of `display_order` for drag-and-drop reordering in the owner portal.
+
+#### [`StudentLibraryProfileUpsertService.java`](file:///e:/EduGlobin/backend/src/main/java/com/eduglobin/booking/StudentLibraryProfileUpsertService.java) [NEW]
+- Upserts a student's CRM profile at a library upon first booking or check-in, recording student name, phone, and library association.
+- Prevents duplicate CRM record creation using an `ON CONFLICT DO NOTHING` pattern.
+
+---
+
+### Updated Backend Files
+
+#### [`BookingService.java`](file:///e:/EduGlobin/backend/src/main/java/com/eduglobin/booking/BookingService.java) [MODIFY]
+- Integrated `StudentLibraryProfileUpsertService` call post-checkout to auto-register students in the library's CRM on first booking.
+
+#### [`WalkInAssignmentService.java`](file:///e:/EduGlobin/backend/src/main/java/com/eduglobin/booking/WalkInAssignmentService.java) [MODIFY]
+- Extended to support the 3-state desk lookup (`NOT_FOUND`, `FOUND_UNCLAIMED`, `FOUND_CLAIMED`) used by the Owner Portal walk-in desk assignment UI.
+- Added claimed-fields support (`claimed_at`, `claimed_by_student_id`) from V35 migration.
+
+#### [`BookCirculationService.java`](file:///e:/EduGlobin/backend/src/main/java/com/eduglobin/circulation/BookCirculationService.java) [MODIFY]
+- Refactored visitor exit approval logic (`ownerApproveExit`) to log `VISITOR_EXIT_APPROVED` audit events with structured JSON metadata.
+
+#### [`LibraryOnboardingService.java`](file:///e:/EduGlobin/backend/src/main/java/com/eduglobin/library/LibraryOnboardingService.java) [MODIFY]
+- Added photo-aware onboarding: after library approval, the photo table association is established.
+- Extended approval and rejection flows to record `approved_at` / `rejected_at` timestamps consistently.
+
+#### [`PartnerReportsService.java`](file:///e:/EduGlobin/backend/src/main/java/com/eduglobin/reporting/PartnerReportsService.java) [MODIFY]
+- Added revenue breakdown queries using new subscription plan associations.
+- Added monthly revenue trend aggregation from `wallet_transactions` for the owner analytics dashboard.
+
+---
+
+### New Flyway Migrations
+
+#### [`V32__subscription_crm_non_reserved.sql`](file:///e:/EduGlobin/backend/src/main/resources/db/migration/V32__subscription_crm_non_reserved.sql) [NEW]
+- Creates `subscription_categories` (name, description, display_order) and `subscription_plans` (name, price, category_id) tables.
+- Adds CRM-related columns to `student_crm_records`: `subscription_plan_id`, `fee_paid_until`, `notes`.
+- Adds `is_non_reserved` flag to `seat_desks` for walk-in-only seating zones.
+
+#### [`V33__fix_bookings_check_constraints.sql`](file:///e:/EduGlobin/backend/src/main/resources/db/migration/V33__fix_bookings_check_constraints.sql) [NEW]
+- Repairs `CHECK` constraints on the `bookings` table that were too strict for the expanded booking flow (walk-ins, free-tier, and non-reserved seat scenarios).
+
+#### [`V34__private_library_visitor_leads.sql`](file:///e:/EduGlobin/backend/src/main/resources/db/migration/V34__private_library_visitor_leads.sql) [NEW]
+- Creates `private_library_leads` table: `id`, `library_id`, `student_name`, `phone`, `message`, `status` (`NEW`/`CONTACTED`/`CONVERTED`), `created_at`.
+- Indexes on `library_id` and `status` for fast owner-scoped lead list queries.
+
+#### [`V35__add_claimed_fields.sql`](file:///e:/EduGlobin/backend/src/main/resources/db/migration/V35__add_claimed_fields.sql) [NEW]
+- Adds `claimed_at TIMESTAMPTZ` and `claimed_by_student_id UUID` columns to `seat_desks`.
+- Enables the 3-state walk-in lookup flow: unclaimed desks show assignment UI, claimed desks show current occupant info.
+
+#### [`V36__library_photos.sql`](file:///e:/EduGlobin/backend/src/main/resources/db/migration/V36__library_photos.sql) [NEW]
+- Creates `library_photos` table: `id`, `library_id`, `url`, `caption`, `display_order`, `uploaded_by`, `created_at`.
+- Foreign-keyed to `libraries` with `ON DELETE CASCADE` to clean up photos when a library is deleted.
+- Index on `(library_id, display_order)` for fast ordered photo retrieval.
+
+---
+
+### New Frontend Files
+
+#### [`ProtectedRoute.tsx`](file:///e:/EduGlobin/frontend/src/components/ProtectedRoute.tsx) [NEW]
+- Wrapper component that enforces authentication and role-based access for protected pages.
+- Redirects unauthenticated users to `/login` and role-mismatched users to a forbidden page.
+
+#### [`StudentSidebar.tsx`](file:///e:/EduGlobin/frontend/src/components/StudentSidebar.tsx) [NEW]
+- Collapsible sidebar navigation component for the student dashboard, providing links to dashboard, bookings, wallet, book loans, complaints, and profile.
+
+---
+
+### Updated Frontend Files
+
+#### [`App.tsx`](file:///e:/EduGlobin/frontend/src/App.tsx) / [`router.tsx`](file:///e:/EduGlobin/frontend/src/router.tsx) [MODIFY]
+- Added routes for `RegisterRolePage` and wrapped role-specific pages with `ProtectedRoute`.
+- Connected new `StudentSidebar` layout for all student-facing routes.
+
+#### [`AdminPortalPage.tsx`](file:///e:/EduGlobin/frontend/src/pages/AdminPortalPage.tsx) [MODIFY]
+- Added Subscription Category management UI: create categories, add plans, view nested plan list.
+- Wired to `POST/GET /api/v1/admin/subscription-categories` endpoints.
+
+#### [`OwnerPortalPage.tsx`](file:///e:/EduGlobin/frontend/src/pages/OwnerPortalPage.tsx) [MODIFY]
+- Added photo management tab: drag-to-reorder gallery, Supabase Storage upload integration, caption editing.
+- Extended walk-in assignment with 3-state desk lookup (`IDLE` → `NOT_FOUND` / `FOUND_UNCLAIMED` / `FOUND_CLAIMED`).
+- Added CRM panel with attendance, roster, and payment reminder views.
+
+#### [`StudentDashboardPage.tsx`](file:///e:/EduGlobin/frontend/src/pages/StudentDashboardPage.tsx) [MODIFY]
+- Integrated `StudentSidebar` for persistent navigation.
+- Added data-access log section and pending vacate requests panel.
+
+#### [`LandingPage.tsx`](file:///e:/EduGlobin/frontend/src/pages/LandingPage.tsx) / [`LibraryDetailPage.tsx`](file:///e:/EduGlobin/frontend/src/pages/LibraryDetailPage.tsx) [MODIFY]
+- `LandingPage`: added photo carousel using `library_photos` data.
+- `LibraryDetailPage`: integrated photo gallery grid from `GET /api/v1/libraries/{id}/photos`.
+
+#### [`en.json`](file:///e:/EduGlobin/frontend/src/locales/en.json) / [`hi.json`](file:///e:/EduGlobin/frontend/src/locales/hi.json) [MODIFY]
+- Added i18n keys for CRM panel labels, photo management UI, subscription plan UI, and walk-in 3-state messages.
+
+---
+
+### Key Tables (After V36)
+
+| Table | Purpose |
+|---|---|
+| `libraries` | Library profiles with full onboarding data, approval status, pricing, amenities, photo count |
+| `library_photos` | Ordered photo gallery per library; client uploads to Supabase Storage, URL stored here |
+| `shifts` | Time-based pricing with pending price-change governance columns |
+| `seat_desks` | Physical seats with claimed fields (`claimed_at`, `claimed_by_student_id`), `is_non_reserved` flag |
+| `bookings` | Reservations with cancellation audit trail, owner confirmation, QR tokens |
+| `booking_disputes` | Dispute tracking with auto-reject/escalate logic |
+| `student_wallets` / `wallet_transactions` | Financial liability tracking |
+| `cancellation_refund_tiers` | Configurable tiered refund policy |
+| `platform_config` | Runtime-tunable settings (e.g., price change threshold) |
+| `student_crm_records` | Per-library student enrollment, fee tracking, subscription plan linkage |
+| `complaint_tickets` | Support tickets (library-specific + platform-wide) |
+| `subscription_categories` | Admin-defined subscription tiers (e.g., Monthly, Quarterly) |
+| `subscription_plans` | Priced plans under each category |
+| `private_library_leads` | Interest leads from students for private/unlisted libraries |
+
