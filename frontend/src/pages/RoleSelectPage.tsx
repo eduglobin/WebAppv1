@@ -8,7 +8,6 @@ export default function RoleSelectPage() {
 
   return (
     <div className="min-h-screen bg-[#f6f8fc] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#eef2f9] via-white to-[#f6f8fc] dark:bg-slate-950 dark:from-indigo-950 dark:via-slate-950 dark:to-slate-950 text-slate-800 dark:text-slate-100 flex flex-col relative overflow-hidden transition-colors duration-300">
-      <Navbar />
 
       {/* Decorative blobs */}
       <div className="absolute w-[500px] h-[500px] rounded-full bg-[#0f62fe]/5 dark:bg-[#0f62fe]/10 blur-3xl -top-20 -left-20 pointer-events-none"></div>
@@ -21,7 +20,7 @@ export default function RoleSelectPage() {
           <img
             src="/logov1.png"
             alt="EduGlobin Logo"
-            className="h-20 w-auto object-contain mb-3 select-none pointer-events-none"
+            className="h-20 w-20 object-cover rounded-full mb-3 select-none pointer-events-none"
           />
           <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight select-none flex items-center justify-center">
             <span className="text-[#032b85] dark:text-white">Edu</span>

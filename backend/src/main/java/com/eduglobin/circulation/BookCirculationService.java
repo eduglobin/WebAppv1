@@ -474,7 +474,7 @@ public class BookCirculationService {
     public List<Map<String, Object>> getPendingVisitorRequests(UUID libraryId) {
         String sql = "SELECT v.id as request_id, v.purpose, v.check_in_at, v.status, " +
                 "slp.id as profile_id, slp.institute_id_number, COALESCE(p.full_name, 'Student Visitor') as student_name, " +
-                "COALESCE(slp.institute_email, p.email, '-') as student_email, COALESCE(p.phone, '-') as student_phone " +
+                "COALESCE(slp.institute_email, '-') as student_email, COALESCE(p.phone, '-') as student_phone " +
                 "FROM visiting_circulation_students v " +
                 "JOIN student_library_profiles slp ON v.student_library_profile_id = slp.id " +
                 "LEFT JOIN profiles p ON slp.student_id = p.id " +

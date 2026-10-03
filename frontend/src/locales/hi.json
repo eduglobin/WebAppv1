@@ -11,14 +11,14 @@
   "nav": {
     "home": "होम",
     "search": "खोज",
-    "recommend": "AI सॉल्वर",
+    "recommend": "सॉल्वर",
     "about": "हमारे बारे में",
     "signOut": "साइन आउट"
   },
   "login": {
-    "welcome": "वापसी पर आपका स्वागत है! 👋",
-    "welcomeBack": "वापसी पर आपका स्वागत है! 👋",
-    "welcomeNew": "आपका स्वागत है! 👋",
+    "welcome": "वापसी पर आपका स्वागत है!",
+    "welcomeBack": "वापसी पर आपका स्वागत है!",
+    "welcomeNew": "आपका स्वागत है!",
     "emailLabel": "ईमेल पता",
     "passwordLabel": "पासवर्ड",
     "signIn": "साइन इन करें",

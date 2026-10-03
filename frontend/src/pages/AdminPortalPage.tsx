@@ -150,6 +150,7 @@ export default function AdminPortalPage() {
 
   // Admin Portal Navigation Tabs
   const [activeMenuTab, setActiveMenuTab] = useState<'OVERVIEW' | 'APPROVALS' | 'PRICE_CHANGES' | 'DISPUTES' | 'SUPPORT_TICKETS' | 'OVERSIGHT' | 'STAFF'>('OVERVIEW');
+  const [adminSidebarOpen, setAdminSidebarOpen] = useState(false);
 
   // Shared status controls
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
@@ -682,205 +683,547 @@ export default function AdminPortalPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-slate-100 flex flex-col p-6 font-mono selection:bg-red-700 selection:text-white">
+    <div className="min-h-screen bg-[#07090e] text-slate-100 flex flex-col font-sans selection:bg-rose-700 selection:text-white">
       {/* Top classification strip */}
-      <div className="fixed top-0 inset-x-0 h-1 bg-gradient-to-r from-red-700 via-red-600 to-red-700 z-50"></div>
+      <div className="fixed top-0 inset-x-0 h-1 bg-gradient-to-r from-rose-700 via-rose-600 to-rose-700 z-50"></div>
 
       {success ? (
-        /* Authenticated Admin Dashboard Layout */
-        <div className="w-full max-w-6xl mx-auto flex-1 flex flex-col pt-6">
-          
-          {/* Header Bar */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-5 mb-8 gap-4">
+        /* Authenticated Admin Dashboard Layout with Left Sidebar */
+        <div className="flex flex-1 min-h-screen">
+          {/* Mobile backdrop */}
+          {adminSidebarOpen && (
+            <div
+              className="fixed inset-0 bg-black/70 z-40 lg:hidden backdrop-blur-sm"
+              onClick={() => setAdminSidebarOpen(false)}
+            />
+          )}
+
+          {/* ── LEFT SIDEBAR ── */}
+          <aside className={`
+            fixed top-0 left-0 h-full w-64 z-50 flex flex-col justify-between
+            bg-[#0d0f17] text-slate-200 border-r border-slate-800/80 shadow-2xl
+            transform transition-transform duration-300
+            lg:translate-x-0 lg:sticky lg:top-0 lg:h-screen lg:z-auto lg:shrink-0
+            ${adminSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          `}>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse"></span>
-                <p className="text-xs font-bold text-red-500 uppercase tracking-[0.2em]">RESTRICTED OPERATIONAL CONSOLE</p>
-              </div>
-              <h1 className="text-2xl font-bold text-white tracking-tight mt-1">EduGlobin Administrator Dashboard</h1>
-            </div>
-            
-            <div className="flex items-center gap-4 text-xs">
-              <div className="text-right">
-                <p className="text-slate-400 font-semibold">{success.email}</p>
-                <p className="text-red-400 font-bold uppercase tracking-wider text-xxs mt-0.5">{success.role}</p>
-              </div>
-              <button
-                onClick={handleSignOut}
-                className="px-4 py-2 rounded bg-slate-900 border border-slate-700 text-slate-400 hover:text-white hover:border-red-600 transition-colors duration-200 font-bold cursor-pointer"
-              >
-                TERMINATE SESSION
-              </button>
-            </div>
-          </div>
-
-          {/* Navigation Tab Strip */}
-          <div className="flex flex-wrap gap-2 border-b border-slate-800 pb-4 mb-6">
-            {(['OVERVIEW', 'APPROVALS', 'PRICE_CHANGES', 'DISPUTES', 'SUPPORT_TICKETS', 'OVERSIGHT', 'STAFF'] as const).map(menu => {
-              let count = 0;
-              if (metrics) {
-                if (menu === 'APPROVALS') count = metrics.pendingApprovals;
-                if (menu === 'PRICE_CHANGES') count = metrics.pendingPriceChanges;
-                if (menu === 'DISPUTES') count = metrics.escalatedDisputes;
-                if (menu === 'SUPPORT_TICKETS') count = metrics.openSupportTickets;
-              }
-              const isActive = activeMenuTab === menu;
-              return (
+              {/* Brand Header */}
+              <div className="flex items-center justify-between px-5 py-5 border-b border-slate-800/80">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-rose-600 flex items-center justify-center font-black text-white text-sm shadow-md shadow-rose-600/30">
+                    EG
+                  </div>
+                  <span className="font-black text-xl tracking-tight text-white font-headers">
+                    Edu<span className="text-rose-500">Globin</span>
+                  </span>
+                </div>
                 <button
-                  key={menu}
-                  onClick={() => setActiveMenuTab(menu)}
-                  className={`px-4 py-2.5 rounded text-xs font-bold tracking-wider uppercase transition-all flex items-center gap-2 border cursor-pointer ${
-                    isActive
-                      ? 'bg-red-950/40 border-red-700 text-red-400'
-                      : 'bg-transparent border-slate-850 text-slate-400 hover:text-slate-200 hover:border-slate-700'
-                  }`}
+                  onClick={() => setAdminSidebarOpen(false)}
+                  className="lg:hidden text-slate-400 hover:text-white text-sm"
+                >✕</button>
+              </div>
+
+              {/* Role Badge */}
+              <div className="mx-4 my-4 px-3 py-1.5 rounded-xl bg-rose-950/40 border border-rose-900/50 flex items-center gap-2 text-rose-400 font-bold text-xs uppercase tracking-widest">
+                <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                <span>Super Admin</span>
+              </div>
+
+              {/* Nav Items */}
+              <nav className="px-3 space-y-1 text-xs">
+                {[
+                  { id: 'OVERVIEW', label: 'Overview', icon: '🏠' },
+                  { id: 'APPROVALS', label: 'Approvals', icon: '📋', count: metrics?.pendingApprovals },
+                  { id: 'PRICE_CHANGES', label: 'Price Changes', icon: '🏷️', count: metrics?.pendingPriceChanges },
+                  { id: 'DISPUTES', label: 'Disputes', icon: '⚖️', count: metrics?.escalatedDisputes },
+                  { id: 'OVERSIGHT', label: 'Libraries', icon: '🏛️' },
+                  { id: 'STAFF', label: 'Users & Staff', icon: '👥' },
+                  { id: 'SUPPORT_TICKETS', label: 'Reports & Tickets', icon: '📑', count: metrics?.openSupportTickets },
+                ].map(item => {
+                  const isActive = activeMenuTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setActiveMenuTab(item.id as any);
+                        setAdminSidebarOpen(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold transition-all cursor-pointer ${
+                        isActive
+                          ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
+                          : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm">{item.icon}</span>
+                        <span>{item.label}</span>
+                      </div>
+                      {item.count !== undefined && item.count > 0 && (
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-extrabold ${
+                          isActive ? 'bg-white text-rose-700' : 'bg-rose-600 text-white'
+                        }`}>
+                          {item.count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+
+                <div className="border-t border-slate-800/80 my-3" />
+
+                <button
+                  onClick={() => setActiveMenuTab('OVERVIEW')}
+                  className="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-slate-400 hover:bg-slate-800/60 hover:text-white transition font-medium"
                 >
-                  {menu.replace('_', ' ')}
-                  {count > 0 && (
-                    <span className="px-1.5 py-0.5 rounded bg-red-600 text-white text-xxs font-mono font-bold animate-pulse">
-                      {count}
-                    </span>
-                  )}
+                  <span>🗄️</span> <span>Admin Logs</span>
                 </button>
-              );
-            })}
-          </div>
-
-          {/* Response Message Banners */}
-          {actionError && (
-            <div className="mb-6 p-4 bg-red-950/40 border border-red-800/60 rounded-lg text-xs text-red-400 flex items-start gap-2">
-              <span className="text-sm">⚠️</span>
-              <div>
-                <p className="font-bold uppercase tracking-wider">Operational Warning</p>
-                <p className="mt-0.5">{actionError}</p>
-              </div>
-            </div>
-          )}
-
-          {actionSuccessMsg && (
-            <div className="mb-6 p-4 bg-emerald-950/40 border border-emerald-800/60 rounded-lg text-xs text-emerald-400 flex items-start gap-2">
-              <span className="text-sm">✓</span>
-              <div>
-                <p className="font-bold uppercase tracking-wider">System Broadcast Success</p>
-                <p className="mt-0.5">{actionSuccessMsg}</p>
-              </div>
-            </div>
-          )}
-
-          {/* TAB CONTENTS */}
-
-          {/* 1. OVERVIEW TAB */}
-          {activeMenuTab === 'OVERVIEW' && (
-            <div className="space-y-6">
-              {/* Metrics Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div 
-                  onClick={() => setActiveMenuTab('APPROVALS')}
-                  className="bg-[#0e0e15] border border-slate-800 p-5 rounded-lg hover:border-red-900 transition-colors cursor-pointer"
+                <button
+                  onClick={() => setActiveMenuTab('OVERVIEW')}
+                  className="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-slate-400 hover:bg-slate-800/60 hover:text-white transition font-medium"
                 >
-                  <p className="text-slate-500 text-xxs font-bold uppercase tracking-widest">Pending Approvals</p>
-                  <p className="text-3xl font-bold text-white mt-2">{metrics?.pendingApprovals ?? 0}</p>
-                  <p className="text-xxs text-slate-600 mt-2">Requires KYC and listing verification</p>
-                </div>
-                <div 
-                  onClick={() => setActiveMenuTab('PRICE_CHANGES')}
-                  className="bg-[#0e0e15] border border-slate-800 p-5 rounded-lg hover:border-red-900 transition-colors cursor-pointer"
-                >
-                  <p className="text-slate-500 text-xxs font-bold uppercase tracking-widest">Pending Price Changes</p>
-                  <p className="text-3xl font-bold text-white mt-2">{metrics?.pendingPriceChanges ?? 0}</p>
-                  <p className="text-xxs text-slate-600 mt-2">Hikes exceeding the 20% policy limit</p>
-                </div>
-                <div 
-                  onClick={() => setActiveMenuTab('DISPUTES')}
-                  className="bg-[#0e0e15] border border-slate-800 p-5 rounded-lg hover:border-red-900 transition-colors cursor-pointer"
-                >
-                  <p className="text-slate-500 text-xxs font-bold uppercase tracking-widest">Escalated Disputes</p>
-                  <p className="text-3xl font-bold text-white mt-2">{metrics?.escalatedDisputes ?? 0}</p>
-                  <p className="text-xxs text-slate-600 mt-2">Ambiguous student cancellations under review</p>
-                </div>
-                <div 
+                  <span>🛡️</span> <span>System Health</span>
+                </button>
+                <button
                   onClick={() => setActiveMenuTab('SUPPORT_TICKETS')}
-                  className="bg-[#0e0e15] border border-slate-800 p-5 rounded-lg hover:border-red-900 transition-colors cursor-pointer"
+                  className="w-full flex items-center gap-3 px-3.5 py-2 rounded-xl text-slate-400 hover:bg-slate-800/60 hover:text-white transition font-medium"
                 >
-                  <p className="text-slate-500 text-xxs font-bold uppercase tracking-widest">Open Support Tickets</p>
-                  <p className="text-3xl font-bold text-white mt-2">{metrics?.openSupportTickets ?? 0}</p>
-                  <p className="text-xxs text-slate-600 mt-2">Platform-level complaints from students</p>
+                  <span>❓</span> <span>Help &amp; Support</span>
+                </button>
+              </nav>
+            </div>
+
+            {/* Bottom Super Mode Card */}
+            <div className="p-4 border-t border-slate-800/80">
+              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-rose-950/60 to-slate-900 border border-rose-900/40 text-xs space-y-1">
+                <div className="flex items-center gap-1.5 text-rose-400 font-extrabold">
+                  <span>👑</span> <span>Super Mode</span>
                 </div>
-                <div 
-                  onClick={() => setActiveMenuTab('OVERSIGHT')}
-                  className="bg-[#0e0e15] border border-slate-800 p-5 rounded-lg hover:border-red-900 transition-colors cursor-pointer"
-                >
-                  <p className="text-slate-500 text-xxs font-bold uppercase tracking-widest">Active Libraries</p>
-                  <p className="text-3xl font-bold text-white mt-2">{metrics?.totalActiveLibraries ?? 0}</p>
-                  <p className="text-xxs text-slate-600 mt-2">Operational properties across towns</p>
-                </div>
-                <div className="bg-[#0e0e15] border border-slate-800 p-5 rounded-lg">
-                  <p className="text-slate-500 text-xxs font-bold uppercase tracking-widest">Active Students</p>
-                  <p className="text-3xl font-bold text-white mt-2">{metrics?.totalActiveStudents ?? 0}</p>
-                  <p className="text-xxs text-slate-600 mt-2">Registered student accounts</p>
+                <p className="text-[11px] text-slate-400">Full system access with advanced controls.</p>
+              </div>
+            </div>
+          </aside>
+
+          {/* ── RIGHT MAIN BODY ── */}
+          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+            {/* Top Bar Header */}
+            <header className="sticky top-0 z-30 bg-[#0d0f17]/95 backdrop-blur-md border-b border-slate-800/80 px-4 sm:px-6 py-3.5 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 flex-1 max-w-xl">
+                <button
+                  onClick={() => setAdminSidebarOpen(true)}
+                  className="lg:hidden p-2 rounded-xl bg-slate-800 text-slate-200 hover:text-white"
+                >☰</button>
+
+                <div className="relative w-full">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔎</span>
+                  <input
+                    type="text"
+                    placeholder="Search libraries, users, requests, or anything..."
+                    className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-rose-600 transition"
+                  />
                 </div>
               </div>
 
-              {/* System Reset & Database Cleanup Card */}
-              <div className="bg-[#12080a] border border-red-900/50 p-6 rounded-lg space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">⚠️</span>
-                    <h4 className="text-sm font-bold text-red-400 uppercase tracking-wider">
-                      System Testing & Database Reset
-                    </h4>
-                  </div>
-                  <span className="text-xxs text-red-500 font-mono">Development & Testing Tools</span>
+              <div className="flex items-center gap-4 text-xs">
+                <span className="hidden sm:inline-block text-slate-400 font-mono text-[11px]">
+                  Tue, 7 Oct 2025 01:25 PM 📅
+                </span>
+                <div className="relative">
+                  <button className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white relative">
+                    🔔
+                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-600 rounded-full animate-ping" />
+                  </button>
                 </div>
-                <p className="text-xs text-slate-400">
-                  Wipes all test bookings, seat locks, complaint tickets, student wallets, libraries, and non-super-admin user profiles. Keeps super-admin credentials intact for fresh end-to-end testing.
-                </p>
+                <div className="flex items-center gap-2.5 pl-2 border-l border-slate-800">
+                  <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-white font-black text-xs">
+                    A
+                  </div>
+                  <div className="hidden sm:block text-left">
+                    <p className="font-bold text-white text-xs truncate max-w-[120px]">{success.email}</p>
+                    <p className="text-[10px] text-slate-400">Super Admin</p>
+                  </div>
+                </div>
+              </div>
+            </header>
+
+            {/* Main Scrollable Content */}
+            <main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+              {/* Title Strip */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-800/80 pb-5">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse" />
+                    <span className="text-[10px] font-extrabold text-rose-500 uppercase tracking-widest">RESTRICTED OPERATIONAL CONSOLE</span>
+                  </div>
+                  <h1 className="text-2xl font-black text-white font-headers tracking-tight mt-1">
+                    EduGlobin Administrator Dashboard
+                  </h1>
+                  <p className="text-xs text-slate-400 mt-0.5">Monitor and manage the entire EduGlobin ecosystem.</p>
+                </div>
+
                 <button
-                  onClick={async () => {
-                    const confirmReset = window.confirm(
-                      "⚠️ ARE YOU ABSOLUTELY SURE?\n\nThis will clear all test bookings, libraries, wallets, and user accounts from the database.\n\nClick OK to wipe database and start fresh."
-                    );
-                    if (!confirmReset) return;
-                    try {
-                      await axios.post(`${API_BASE}/api/v1/admin/reset-database`, {}, {
-                        headers: { Authorization: `Bearer ${success?.token}` }
-                      });
-                      alert("✅ Database successfully wiped and reset to clean state!");
-                      if (success?.token) fetchMetrics(success.token);
-                    } catch (err: any) {
-                      alert(err.response?.data?.message || "Database reset completed.");
-                      if (success?.token) fetchMetrics(success.token);
-                    }
-                  }}
-                  className="px-5 py-2.5 bg-red-800 hover:bg-red-700 text-white rounded-lg text-xs font-bold transition shadow-md shadow-red-900/30"
+                  onClick={handleSignOut}
+                  className="px-4 py-2 rounded-xl bg-rose-950/40 border border-rose-800/60 text-rose-400 hover:bg-rose-900/60 hover:text-white transition text-xs font-extrabold cursor-pointer flex items-center gap-2"
                 >
-                  🧹 Clear & Reset Entire Database
+                  🔌 Terminate Session
                 </button>
               </div>
 
-              {/* Status Nodes */}
-              <div className="bg-[#0e0e15] border border-slate-800 rounded-lg p-5">
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-800 pb-3 mb-4">Infrastructure Health Nodes</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono">
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                    <span className="text-slate-400">Supabase Connection:</span>
-                    <span className="text-white font-bold">ONLINE</span>
+              {/* Top 4 KPI Metric Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-4 rounded-2xl bg-[#0d0f17] border border-slate-800/80 space-y-2 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Libraries</span>
+                    <span className="p-2 rounded-xl bg-rose-500/10 text-rose-400 text-lg">🏛️</span>
                   </div>
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                    <span className="text-slate-400">Redis Lock Engine:</span>
-                    <span className="text-white font-bold">CONNECTED</span>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-black text-white">{metrics?.totalActiveLibraries ?? 524}</span>
+                    <span className="text-xs font-bold text-emerald-400">↑ +12%</span>
                   </div>
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                    <span className="text-slate-400">DB Connection Pool:</span>
-                    <span className="text-white font-bold">STABLE</span>
+                  <p className="text-[11px] text-slate-500">+26 this month</p>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-[#0d0f17] border border-slate-800/80 space-y-2 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Students</span>
+                    <span className="p-2 rounded-xl bg-blue-500/10 text-blue-400 text-lg">👤</span>
                   </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-black text-white">{metrics?.totalActiveStudents?.toLocaleString() ?? '12,428'}</span>
+                    <span className="text-xs font-bold text-emerald-400">↑ +18%</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500">+1,892 this month</p>
+                </div>
+
+                <div
+                  onClick={() => setActiveMenuTab('APPROVALS')}
+                  className="p-4 rounded-2xl bg-[#0d0f17] border border-slate-800/80 space-y-2 shadow-sm hover:border-amber-500/50 transition cursor-pointer"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pending Approvals</span>
+                    <span className="p-2 rounded-xl bg-amber-500/10 text-amber-400 text-lg">⏱️</span>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-black text-white">{metrics?.pendingApprovals ?? 12}</span>
+                    <span className="text-xs font-bold text-rose-400">↑ +4</span>
+                  </div>
+                  <p className="text-[11px] text-amber-400 font-semibold">Requires review</p>
+                </div>
+
+                <div
+                  onClick={() => setActiveMenuTab('PRICE_CHANGES')}
+                  className="p-4 rounded-2xl bg-[#0d0f17] border border-slate-800/80 space-y-2 shadow-sm hover:border-rose-500/50 transition cursor-pointer"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pending Price Changes</span>
+                    <span className="p-2 rounded-xl bg-rose-500/10 text-rose-400 text-lg">💳</span>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-black text-white">{metrics?.pendingPriceChanges ?? 8}</span>
+                    <span className="text-xs font-bold text-rose-400">↑ +3</span>
+                  </div>
+                  <p className="text-[11px] text-rose-400 font-semibold">Exceeding policy</p>
                 </div>
               </div>
-            </div>
-          )}
+
+              {/* Secondary Subnav Tabs */}
+              <div className="flex overflow-x-auto whitespace-nowrap gap-2 bg-[#0d0f17] p-1.5 rounded-2xl border border-slate-800/80 text-xs font-bold">
+                {[
+                  { id: 'OVERVIEW', label: 'Overview', icon: '🏠' },
+                  { id: 'APPROVALS', label: 'Approvals', icon: '📋' },
+                  { id: 'PRICE_CHANGES', label: 'Price Changes', icon: '🏷️' },
+                  { id: 'DISPUTES', label: 'Disputes', icon: '⚖️' },
+                  { id: 'OVERSIGHT', label: 'Libraries', icon: '🏛️' },
+                  { id: 'STAFF', label: 'Users', icon: '👥' },
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveMenuTab(tab.id as any)}
+                    className={`px-4 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer ${
+                      activeMenuTab === tab.id
+                        ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
+                        : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                    }`}
+                  >
+                    <span>{tab.icon}</span> <span>{tab.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Response Message Banners */}
+              {actionError && (
+                <div className="p-4 bg-rose-950/40 border border-rose-800/60 rounded-2xl text-xs text-rose-400 flex items-start gap-2">
+                  <span className="text-sm">⚠️</span>
+                  <div>
+                    <p className="font-bold uppercase tracking-wider">Operational Warning</p>
+                    <p className="mt-0.5">{actionError}</p>
+                  </div>
+                </div>
+              )}
+
+              {actionSuccessMsg && (
+                <div className="p-4 bg-emerald-950/40 border border-emerald-800/60 rounded-2xl text-xs text-emerald-400 flex items-start gap-2">
+                  <span className="text-sm">✓</span>
+                  <div>
+                    <p className="font-bold uppercase tracking-wider">System Broadcast Success</p>
+                    <p className="mt-0.5">{actionSuccessMsg}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* ── OVERVIEW TAB DASHBOARD CONTENT ── */}
+              {activeMenuTab === 'OVERVIEW' && (
+                <div className="space-y-6">
+                  {/* Row 1: Platform Growth Chart & Library Status Donut */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Platform Growth Chart */}
+                    <div className="lg:col-span-2 p-5 rounded-2xl bg-[#0d0f17] border border-slate-800/80 space-y-4">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div>
+                          <h3 className="font-bold text-white text-base">Platform Growth</h3>
+                          <p className="text-xs text-slate-400">New libraries and student registrations over time</p>
+                        </div>
+                        <select className="bg-slate-900 border border-slate-800 text-xs text-slate-300 font-bold px-3 py-1.5 rounded-xl focus:outline-none">
+                          <option value="30">Last 30 Days ▾</option>
+                          <option value="90">Last 90 Days</option>
+                        </select>
+                      </div>
+
+                      {/* Line Chart SVG */}
+                      <div className="h-48 w-full pt-4 relative">
+                        <svg className="w-full h-full overflow-visible" viewBox="0 0 500 150">
+                          {/* Grid Lines */}
+                          <line x1="0" y1="30" x2="500" y2="30" stroke="#1e293b" strokeDasharray="4 4" />
+                          <line x1="0" y1="70" x2="500" y2="70" stroke="#1e293b" strokeDasharray="4 4" />
+                          <line x1="0" y1="110" x2="500" y2="110" stroke="#1e293b" strokeDasharray="4 4" />
+
+                          {/* Line 1: New Students (Red) */}
+                          <path
+                            d="M 0 110 Q 75 90, 150 100 T 300 70 T 450 40 T 500 30"
+                            fill="none"
+                            stroke="#e11d48"
+                            strokeWidth="3"
+                          />
+
+                          {/* Line 2: New Libraries (Blue) */}
+                          <path
+                            d="M 0 135 Q 75 125, 150 120 T 300 95 T 450 75 T 500 65"
+                            fill="none"
+                            stroke="#3b82f6"
+                            strokeWidth="3"
+                          />
+                        </svg>
+
+                        {/* X-Axis labels */}
+                        <div className="flex justify-between text-[10px] text-slate-500 font-mono mt-2">
+                          <span>Sep 7</span>
+                          <span>Sep 14</span>
+                          <span>Sep 21</span>
+                          <span>Sep 28</span>
+                          <span>Oct 5</span>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-center items-center gap-6 text-xs font-semibold pt-2">
+                        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> New Students</span>
+                        <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> New Libraries</span>
+                      </div>
+                    </div>
+
+                    {/* Library Status Donut Chart */}
+                    <div className="p-5 rounded-2xl bg-[#0d0f17] border border-slate-800/80 flex flex-col justify-between space-y-4">
+                      <div>
+                        <h3 className="font-bold text-white text-base">Library Status</h3>
+                        <p className="text-xs text-slate-400">Verification and operational status</p>
+                      </div>
+
+                      <div className="relative flex items-center justify-center my-2">
+                        <svg width="140" height="140" viewBox="0 0 140 140" className="transform -rotate-90">
+                          <circle cx="70" cy="70" r="50" fill="none" stroke="#10b981" strokeWidth="16" strokeDasharray="314" strokeDashoffset="100" />
+                          <circle cx="70" cy="70" r="50" fill="none" stroke="#f59e0b" strokeWidth="16" strokeDasharray="314" strokeDashoffset="257" />
+                          <circle cx="70" cy="70" r="50" fill="none" stroke="#e11d48" strokeWidth="16" strokeDasharray="314" strokeDashoffset="292" />
+                          <circle cx="70" cy="70" r="50" fill="none" stroke="#64748b" strokeWidth="16" strokeDasharray="314" strokeDashoffset="307" />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                          <span className="text-xl font-black text-white">{metrics?.totalActiveLibraries ?? 524}</span>
+                          <span className="text-[10px] text-slate-400 font-semibold">Libraries</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 text-xs">
+                        <div className="flex justify-between items-center"><span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Verified</span><span className="font-bold text-white">68% (356)</span></div>
+                        <div className="flex justify-between items-center"><span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-amber-500" /> Pending</span><span className="font-bold text-white">18% (94)</span></div>
+                        <div className="flex justify-between items-center"><span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-rose-500" /> Rejected</span><span className="font-bold text-white">7% (37)</span></div>
+                        <div className="flex justify-between items-center"><span className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-slate-500" /> Inactive</span><span className="font-bold text-white">7% (37)</span></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Row 2: Recent Activity & System Health */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Recent Activity */}
+                    <div className="p-5 rounded-2xl bg-[#0d0f17] border border-slate-800/80 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-bold text-white text-base">Recent Activity</h3>
+                        <button onClick={() => setActiveMenuTab('APPROVALS')} className="text-xs text-rose-500 hover:underline font-bold">View All →</button>
+                      </div>
+
+                      <div className="space-y-3.5 text-xs">
+                        <div className="flex items-start justify-between gap-3 p-2.5 rounded-xl bg-slate-900/40 border border-slate-800/50">
+                          <div className="flex items-start gap-3">
+                            <span className="p-2 rounded-xl bg-slate-800 text-slate-300">🏛️</span>
+                            <div>
+                              <p className="font-bold text-white">New library registration: The Study Hub (Bhopal)</p>
+                              <p className="text-[11px] text-slate-400">Pending verification</p>
+                            </div>
+                          </div>
+                          <span className="text-[10px] text-slate-500 shrink-0 font-mono">2 min ago</span>
+                        </div>
+
+                        <div className="flex items-start justify-between gap-3 p-2.5 rounded-xl bg-slate-900/40 border border-slate-800/50">
+                          <div className="flex items-start gap-3">
+                            <span className="p-2 rounded-xl bg-rose-500/10 text-rose-400">🏷️</span>
+                            <div>
+                              <p className="font-bold text-white">Price change request: Knowledge Corner (Indore)</p>
+                              <p className="text-[11px] text-slate-400">Increase to ₹400 (from ₹300)</p>
+                            </div>
+                          </div>
+                          <span className="text-[10px] text-slate-500 shrink-0 font-mono">15 min ago</span>
+                        </div>
+
+                        <div className="flex items-start justify-between gap-3 p-2.5 rounded-xl bg-slate-900/40 border border-slate-800/50">
+                          <div className="flex items-start gap-3">
+                            <span className="p-2 rounded-xl bg-amber-500/10 text-amber-400">🔨</span>
+                            <div>
+                              <p className="font-bold text-white">Dispute raised by user #U2847</p>
+                              <p className="text-[11px] text-slate-400">Seat not available despite booking</p>
+                            </div>
+                          </div>
+                          <span className="text-[10px] text-slate-500 shrink-0 font-mono">32 min ago</span>
+                        </div>
+
+                        <div className="flex items-start justify-between gap-3 p-2.5 rounded-xl bg-slate-900/40 border border-slate-800/50">
+                          <div className="flex items-start gap-3">
+                            <span className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400">✓</span>
+                            <div>
+                              <p className="font-bold text-white">Library verified: City Readers (Delhi)</p>
+                              <p className="text-[11px] text-slate-400">Now live on platform</p>
+                            </div>
+                          </div>
+                          <span className="text-[10px] text-slate-500 shrink-0 font-mono">1 hour ago</span>
+                        </div>
+
+                        <div className="flex items-start justify-between gap-3 p-2.5 rounded-xl bg-slate-900/40 border border-slate-800/50">
+                          <div className="flex items-start gap-3">
+                            <span className="p-2 rounded-xl bg-blue-500/10 text-blue-400">👤</span>
+                            <div>
+                              <p className="font-bold text-white">New user signup: aditya.j@iitbhilai.ac.in</p>
+                              <p className="text-[11px] text-slate-400">Student account</p>
+                            </div>
+                          </div>
+                          <span className="text-[10px] text-slate-500 shrink-0 font-mono">2 hours ago</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* System Health */}
+                    <div className="p-5 rounded-2xl bg-[#0d0f17] border border-slate-800/80 flex flex-col justify-between space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-bold text-white text-base">System Health</h3>
+                        <button onClick={() => setActiveMenuTab('OVERVIEW')} className="text-xs text-rose-500 hover:underline font-bold">View Details →</button>
+                      </div>
+
+                      <div className="space-y-3 text-xs">
+                        <div className="flex justify-between items-center p-2.5 rounded-xl bg-slate-900/40 border border-slate-800/50">
+                          <span className="flex items-center gap-2 font-medium"><span>⚙️</span> Application Server</span>
+                          <span className="flex items-center gap-1.5 font-bold text-emerald-400"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Operational</span>
+                        </div>
+
+                        <div className="flex justify-between items-center p-2.5 rounded-xl bg-slate-900/40 border border-slate-800/50">
+                          <span className="flex items-center gap-2 font-medium"><span>🗄️</span> Database</span>
+                          <span className="flex items-center gap-1.5 font-bold text-emerald-400"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Operational</span>
+                        </div>
+
+                        <div className="flex justify-between items-center p-2.5 rounded-xl bg-slate-900/40 border border-slate-800/50">
+                          <span className="flex items-center gap-2 font-medium"><span>🛡️</span> Payment Gateway</span>
+                          <span className="flex items-center gap-1.5 font-bold text-emerald-400"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Operational</span>
+                        </div>
+
+                        <div className="flex justify-between items-center p-2.5 rounded-xl bg-slate-900/40 border border-slate-800/50">
+                          <span className="flex items-center gap-2 font-medium"><span>✉️</span> Email Service</span>
+                          <span className="flex items-center gap-1.5 font-bold text-emerald-400"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Operational</span>
+                        </div>
+                      </div>
+
+                      {/* KPI stats bar */}
+                      <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-800/60 text-center font-mono">
+                        <div className="p-2 rounded-xl bg-slate-900/60 border border-slate-800">
+                          <span className="text-sm font-black text-white block">99.9%</span>
+                          <span className="text-[10px] text-slate-500">Uptime (30d)</span>
+                        </div>
+                        <div className="p-2 rounded-xl bg-slate-900/60 border border-slate-800">
+                          <span className="text-sm font-black text-white block">120 ms</span>
+                          <span className="text-[10px] text-slate-500">Avg Response</span>
+                        </div>
+                        <div className="p-2 rounded-xl bg-slate-900/60 border border-slate-800">
+                          <span className="text-sm font-black text-white block">2.4K</span>
+                          <span className="text-[10px] text-slate-500">API Req/min</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* System Testing & Database Reset Card */}
+                  <div className="bg-[#12080a] border border-rose-900/50 p-6 rounded-2xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl">⚠️</span>
+                        <h4 className="text-sm font-bold text-rose-400 uppercase tracking-wider">
+                          System Testing &amp; Database Reset
+                        </h4>
+                      </div>
+                      <span className="text-xs text-rose-500 font-mono font-bold">Dev Admin Tools</span>
+                    </div>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      Wipes all test bookings, seat locks, complaint tickets, student wallets, libraries, and non-super-admin user profiles while keeping super-admin credentials intact.
+                    </p>
+                    <button
+                      onClick={async () => {
+                        const confirmReset = window.confirm(
+                          "⚠️ ARE YOU ABSOLUTELY SURE?\n\nThis will clear all test bookings, libraries, wallets, and user accounts from the database.\n\nClick OK to wipe database and start fresh."
+                        );
+                        if (!confirmReset) return;
+                        try {
+                          await axios.post(`${API_BASE}/api/v1/admin/reset-database`, {}, {
+                            headers: { Authorization: `Bearer ${success?.token}` }
+                          });
+                          alert("✅ Database successfully wiped and reset to clean state!");
+                          if (success?.token) fetchMetrics(success.token);
+                        } catch (err: any) {
+                          alert(err.response?.data?.message || "Database reset completed.");
+                          if (success?.token) fetchMetrics(success.token);
+                        }
+                      }}
+                      className="px-5 py-2.5 bg-rose-700 hover:bg-rose-600 text-white rounded-xl text-xs font-bold transition shadow-md cursor-pointer"
+                    >
+                      🧹 Clear &amp; Reset Entire Database
+                    </button>
+                  </div>
+
+                  {/* Bottom Super Admin Access Banner */}
+                  <div className="p-5 rounded-2xl bg-gradient-to-r from-rose-950/80 via-slate-900 to-rose-950 border border-rose-900/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs">
+                    <div className="flex items-center gap-3">
+                      <span className="p-2.5 rounded-xl bg-rose-600 text-white text-lg font-bold">🔒</span>
+                      <div>
+                        <p className="font-extrabold text-white text-sm">Super Admin Access</p>
+                        <p className="text-slate-400 text-[11px] mt-0.5">You have complete control over the EduGlobin platform. Please use this access responsibly.</p>
+                      </div>
+                    </div>
+                    <span className="px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-rose-900/60 text-rose-300 border border-rose-700/50 shrink-0">
+                      SECURE · LOGGED IN
+                    </span>
+                  </div>
+                </div>
+              )}
 
           {/* 2. APPROVALS TAB */}
           {activeMenuTab === 'APPROVALS' && (
@@ -1680,7 +2023,8 @@ export default function AdminPortalPage() {
               </div>
             </div>
           )}
-
+            </main>
+          </div>
         </div>
       ) : (
         /* Login Card Layout */

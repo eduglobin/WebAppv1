@@ -28,7 +28,7 @@ function App() {
       {showSplash ? (
         <div className="fixed inset-0 z-[10000] bg-[#f6f8fc] dark:bg-slate-950 flex flex-col items-center justify-center transition-colors duration-300">
           <div className="flex flex-col items-center justify-center animate-pulse">
-            <img src="/logov1.png" alt="EduGlobin Logo" className="h-32 md:h-40 w-auto object-contain mb-4 select-none pointer-events-none" />
+            <img src="/logov1.png" alt="EduGlobin Logo" className="h-32 md:h-40 w-32 md:w-40 object-cover rounded-full mb-4 select-none pointer-events-none" />
             <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight select-none flex items-center justify-center">
               <span className="text-[#032b85] dark:text-white">Edu</span>
               <span className="text-[#0f62fe] dark:text-[#00b4ff]">Glob</span>

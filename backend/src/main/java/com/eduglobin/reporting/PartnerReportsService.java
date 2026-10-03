@@ -591,7 +591,7 @@ public class PartnerReportsService {
                     b.booking_reference                                     AS "Booking Ref",
                     COALESCE(p.full_name, 'Walk-In Student')                AS "Student Name",
                     COALESCE(slp.institute_id_number, '-')                  AS "Institute ID",
-                    COALESCE(slp.institute_email, p.email, '-')             AS "Email",
+                    COALESCE(slp.institute_email, '-')                   AS "Email",
                     COALESCE(slp.branch, '-')                               AS "Branch",
                     sd.seat_code                                            AS "Seat",
                     b.pass_type                                             AS "Pass Type",

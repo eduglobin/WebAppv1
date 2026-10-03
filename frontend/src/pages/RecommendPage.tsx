@@ -105,13 +105,12 @@ export default function RecommendPage() {
     <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col transition-colors duration-300">
       <Navbar />
 
-      <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-12 flex flex-col justify-center">
+      <main className="flex-1 max-w-3xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 flex flex-col justify-center">
         
         {/* Step Indicator Header (Hide on Results screen) */}
         {step < 4 && (
-          <div className="mb-10 text-center">
-            <span className="text-xs font-semibold text-violet-400 uppercase tracking-widest">AI Solver Wizard</span>
-            <h2 className="text-3xl font-bold font-headers text-white mt-1 mb-6">Find Your Best Matching Space</h2>
+          <div className="mb-8 sm:mb-10 text-center">
+            <h2 className="text-2xl sm:text-3xl font-bold font-headers text-white mb-6">Find Your Best Matching Space</h2>
             
             {/* Step progress bar */}
             <div className="flex justify-between max-w-xs mx-auto items-center relative">
@@ -138,7 +137,7 @@ export default function RecommendPage() {
 
         {/* STEP 1: BUDGET & LOCATION */}
         {step === 1 && (
-          <section className="bg-slate-800/40 border border-slate-850 p-8 rounded-2xl backdrop-blur-md space-y-6 animate-fadeIn">
+          <section className="bg-slate-800/40 border border-slate-850 p-5 sm:p-8 rounded-2xl backdrop-blur-md space-y-6 animate-fadeIn">
             <h3 className="text-xl font-bold font-headers text-white mb-2">Step 1: Location & Budget</h3>
             
             <LocationPicker onSelectLocation={handleLocationSelect} initialLabel={locationLabel} />
@@ -189,7 +188,7 @@ export default function RecommendPage() {
 
         {/* STEP 2: PRIORITIES & SEATING */}
         {step === 2 && (
-          <section className="bg-slate-800/40 border border-slate-850 p-8 rounded-2xl backdrop-blur-md space-y-6 animate-fadeIn">
+          <section className="bg-slate-800/40 border border-slate-850 p-5 sm:p-8 rounded-2xl backdrop-blur-md space-y-6 animate-fadeIn">
             <h3 className="text-xl font-bold font-headers text-white mb-2">Step 2: Comfort & Safety Priorities</h3>
 
             {/* Core priority toggles */}
@@ -274,7 +273,7 @@ export default function RecommendPage() {
 
         {/* STEP 3: EXAMS & AMENITIES */}
         {step === 3 && (
-          <section className="bg-slate-800/40 border border-slate-850 p-8 rounded-2xl backdrop-blur-md space-y-6 animate-fadeIn">
+          <section className="bg-slate-800/40 border border-slate-850 p-5 sm:p-8 rounded-2xl backdrop-blur-md space-y-6 animate-fadeIn">
             <h3 className="text-xl font-bold font-headers text-white mb-2">Step 3: What are you preparing for?</h3>
 
             {/* Exam focus select */}
@@ -372,7 +371,7 @@ export default function RecommendPage() {
                 {libraries.map((lib) => (
                   <article
                     key={lib.id}
-                    className="p-6 rounded-2xl bg-slate-800/20 border border-slate-850 hover:border-slate-700/50 hover:bg-slate-800/30 transition-all duration-300 flex flex-col md:flex-row gap-6 justify-between"
+                    className="p-4 sm:p-6 rounded-2xl bg-slate-800/20 border border-slate-850 hover:border-slate-700/50 hover:bg-slate-800/30 transition-all duration-300 flex flex-col gap-5"
                   >
                     <div className="flex-1 space-y-4">
                       {/* Badge and Match Score */}
@@ -401,25 +400,23 @@ export default function RecommendPage() {
                         )}
                       </div>
 
-                      {/* PLACEHOLDER FOR DAY 12 GEMINI EXPLANATION */}
                       <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-850 text-slate-400 text-xs leading-relaxed">
                         <div className="font-bold text-violet-400/90 mb-1 uppercase tracking-widest text-[9px] flex items-center gap-1.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse"></span>
-                          Solver Reasoning (Day 12 AI Layer)
+                          Match Reasoning
                         </div>
                         Fits your budget of <strong>₹{maxMonthlyPrice}</strong> ({Math.round(lib.matchScore * 100)}% fit coefficient). Matches your exam goals for <strong>{lib.focusedExams.join(', ')}</strong> and includes critical amenities: {lib.amenities.join(', ')}.
                       </div>
                     </div>
 
-                    {/* Right column: pricing and booking */}
-                    <div className="md:w-44 flex flex-col md:justify-between items-end border-t md:border-t-0 md:border-l border-slate-850/60 pt-4 md:pt-0 md:pl-6">
-                      <div className="text-right">
+                    {/* Bottom row: pricing and booking */}
+                    <div className="flex items-center justify-between gap-4 border-t border-slate-850/60 pt-4">
+                      <div>
                         <span className="block text-slate-500 text-xxs uppercase tracking-wider">Starts at</span>
                         <span className="text-2xl font-bold text-white">₹{lib.monthlyPrice || '800'}</span>
                         <span className="text-xs text-slate-450 block">per month</span>
                       </div>
-
-                      <button className="w-full md:w-auto px-5 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 hover:from-violet-500 hover:to-pink-500 text-white font-bold text-sm shadow hover:shadow-lg transition-all mt-4 md:mt-0 cursor-pointer">
+                      <button className="px-5 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 hover:from-violet-500 hover:to-pink-500 text-white font-bold text-sm shadow hover:shadow-lg transition-all cursor-pointer whitespace-nowrap">
                         Book Now
                       </button>
                     </div>

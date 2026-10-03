@@ -99,6 +99,13 @@ export default function LibraryDetailPage() {
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
 
+  // Library photos from backend
+  const [libraryPhotos, setLibraryPhotos] = useState<Array<{ id: string; url: string; caption?: string }>>([]);
+  const [photoIndex, setPhotoIndex] = useState(0);
+
+  // Active detail tab: overview | photos | reviews | rules
+  const [activeDetailTab, setActiveDetailTab] = useState<'overview' | 'photos' | 'reviews' | 'rules'>('overview');
+
   // Real-time seat count per shift (replaces dummy freeCount)
   const [shiftFreeSeats, setShiftFreeSeats] = useState<Record<string, number>>({});
 
@@ -253,6 +260,18 @@ export default function LibraryDetailPage() {
       })
     );
     setShiftFreeSeats(counts);
+  }, [id]);
+
+  // Fetch library photos
+  useEffect(() => {
+    if (!id) return;
+    api.get(`/api/v1/libraries/${id}/photos`)
+      .then(({ data }) => {
+        if (data?.data && Array.isArray(data.data) && data.data.length > 0) {
+          setLibraryPhotos(data.data);
+        }
+      })
+      .catch(() => {});
   }, [id]);
 
   useEffect(() => {
@@ -780,11 +799,44 @@ export default function LibraryDetailPage() {
   const [showVisitorModal, setShowVisitorModal] = useState(false);
   const [visitorPurpose, setVisitorPurpose] = useState('CIRCULATION');
   const [visitorNotes, setVisitorNotes] = useState('');
+  const [privateVisitorName, setPrivateVisitorName] = useState('');
+  const [privateVisitorContact, setPrivateVisitorContact] = useState('');
+  const [privateVisitorEmail, setPrivateVisitorEmail] = useState('');
   const [visitorLoading, setVisitorLoading] = useState(false);
   const [visitorPassResult, setVisitorPassResult] = useState<any | null>(null);
 
   const handleBookVisitorPass = async () => {
     if (!id) return;
+    const libCat = (library?.libraryCategory || library?.library_category || 'PRIVATE').toUpperCase();
+    
+    // For Private libraries, allow unauthenticated visitor leads
+    if (libCat === 'PRIVATE') {
+      if (!privateVisitorName.trim() || !privateVisitorContact.trim() || !privateVisitorEmail.trim()) {
+        alert('Please fill in all details.');
+        return;
+      }
+      setVisitorLoading(true);
+      setVisitorPassResult(null);
+      try {
+        const { data } = await api.post(`/api/v1/libraries/${id}/private-visitor-leads`, {
+          name: privateVisitorName,
+          contact: privateVisitorContact,
+          email: privateVisitorEmail,
+          purpose: visitorPurpose
+        });
+        if (data?.success) {
+          setVisitorPassResult(data.data || { message: 'Details saved for advertisement!', status: 'SAVED', timeLimitMinutes: 0 });
+        } else {
+          alert(data?.message || 'Failed to submit details.');
+        }
+      } catch (err: any) {
+        alert(err.response?.data?.message || 'Error submitting details.');
+      } finally {
+        setVisitorLoading(false);
+      }
+      return;
+    }
+
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       setShowGuestModal(true);
@@ -1120,49 +1172,453 @@ export default function LibraryDetailPage() {
 
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#070b14] text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-300">
+    <div className="min-h-screen bg-[#f5f6fa] dark:bg-[#070b14] text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-300">
       <Navbar />
 
-      {/* Top Banner / Library title */}
-      <div className="border-b border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-[#0b1120]/70 backdrop-blur-md sticky top-16 z-20">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      {/* ── HERO PHOTO CAROUSEL ── */}
+      {(() => {
+        const photos = libraryPhotos.length > 0
+          ? libraryPhotos
+          : [{ id: 'placeholder', url: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=900&q=80' }];
+        const currentPhoto = photos[photoIndex];
+        const total = photos.length;
+        return (
+          <div className="relative w-full h-52 sm:h-72 overflow-hidden bg-slate-300 dark:bg-slate-800 select-none">
+            {/* Current image */}
+            <img
+              src={currentPhoto.url}
+              alt={(currentPhoto as any).caption || library?.name || 'Library'}
+              className="w-full h-full object-cover transition-opacity duration-300"
+            />
+            {/* Gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
+
+            {/* Back button */}
             <button
               onClick={() => navigate(-1)}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              className="absolute top-4 left-4 w-9 h-9 rounded-full bg-white/90 dark:bg-slate-900/80 backdrop-blur flex items-center justify-center shadow text-slate-700 dark:text-white text-base font-bold hover:bg-white transition"
               title="Go Back"
-            >
-              ← Back
-            </button>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-base font-bold text-slate-900 dark:text-white leading-tight">
-                  {library?.name || (loading ? 'Loading library details...' : 'IIT Bhilai Library')}
-                </h1>
-                {library?.isFree && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                    100% Free Space
-                  </span>
-                )}
+            >←</button>
+
+            {/* Save / Share */}
+            <div className="absolute top-4 right-4 flex items-center gap-2">
+              <button className="w-9 h-9 rounded-full bg-white/90 dark:bg-slate-900/80 backdrop-blur flex items-center justify-center shadow text-slate-700 text-base hover:bg-white transition">♡</button>
+              <button className="w-9 h-9 rounded-full bg-white/90 dark:bg-slate-900/80 backdrop-blur flex items-center justify-center shadow text-slate-700 text-base hover:bg-white transition">⤴</button>
+            </div>
+
+            {/* Prev / Next arrows (only if >1 photo) */}
+            {total > 1 && (
+              <>
+                <button
+                  onClick={() => setPhotoIndex(i => (i - 1 + total) % total)}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white text-sm flex items-center justify-center hover:bg-black/75 transition"
+                >‹</button>
+                <button
+                  onClick={() => setPhotoIndex(i => (i + 1) % total)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white text-sm flex items-center justify-center hover:bg-black/75 transition"
+                >›</button>
+                {/* Dot indicators */}
+                <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-1.5">
+                  {photos.map((_, i) => (
+                    <button key={i} onClick={() => setPhotoIndex(i)}
+                      className={`rounded-full transition-all ${ i === photoIndex ? 'w-4 h-1.5 bg-white' : 'w-1.5 h-1.5 bg-white/50 hover:bg-white/80' }`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Image count badge */}
+            <div className="absolute bottom-3 right-4 px-2.5 py-0.5 rounded-full bg-black/60 text-white text-[11px] font-bold">
+              {photoIndex + 1} / {total}
+            </div>
+
+            {/* Seat lock timer */}
+            {seatLockToken && secondsLeft !== null && (
+              <div className="absolute bottom-3 left-4 flex items-center gap-1.5 text-xs font-mono font-bold px-3 py-1.5 rounded-xl border border-amber-500/60 bg-amber-500/80 text-white animate-pulse">
+                ⏱ {Math.floor(secondsLeft / 60)}:{String(secondsLeft % 60).padStart(2, '0')}
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                {library?.locality ? `${library.locality}, ` : 'Kutelabhata, '}{library?.city || 'Bhilai'}
+            )}
+          </div>
+        );
+      })()}
+
+      <main className="flex-1 w-full max-w-2xl mx-auto px-0 sm:px-4 flex flex-col pb-28">
+        {/* ── LIBRARY INFO CARD ── */}
+        <div className="bg-white dark:bg-[#0c1220] rounded-none sm:rounded-3xl shadow-sm px-5 py-5 mt-0 sm:mt-4 space-y-4">
+
+          {/* Name + Category badge */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl font-black text-slate-900 dark:text-white leading-tight">
+                {library?.name || (loading ? '...' : 'Pragya Study Zone')}
+              </h1>
+              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                <span className="text-amber-500 text-sm">★</span>
+                <span className="text-sm font-bold text-slate-800 dark:text-slate-200">4.6</span>
+                <span className="text-xs text-slate-400">(328 reviews)</span>
+                <span className="text-slate-300 dark:text-slate-600">•</span>
+                <span className="text-xs text-slate-500">Study • Focus • Achieve</span>
+              </div>
+            </div>
+            <span className={`shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold border ${
+              libCat === 'INSTITUTE'
+                ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700'
+                : libCat === 'GOVERNMENT'
+                ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-700'
+                : 'bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-700'
+            }`}>
+              🏛️ {libCat === 'INSTITUTE' ? 'Institute' : libCat === 'GOVERNMENT' ? 'Govt Public' : 'Private'}
+            </span>
+          </div>
+
+          {/* Verified badge */}
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-bold border border-emerald-500/20">
+              ✅ Verified
+            </span>
+            {library?.isFree && (
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-500/20">100% FREE</span>
+            )}
+          </div>
+
+          {/* Address */}
+          <div className="flex items-start gap-2 text-sm">
+            <span className="text-violet-500 text-base mt-0.5">📍</span>
+            <div className="flex-1">
+              <p className="text-slate-700 dark:text-slate-300 font-medium text-sm">
+                {library?.address || 'Bhawarkua Main Road, Indore'}
               </p>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {library?.locality && library?.city ? `${library.locality}, ${library.city}` : '2.1 km from your location'}
+              </p>
+            </div>
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(library?.address || library?.name || 'Library')}`}
+              target="_blank" rel="noreferrer"
+              className="shrink-0 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-xs font-bold border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 transition"
+            >
+              Open in Maps
+            </a>
+          </div>
+
+          {/* Description */}
+          <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed border-l-2 border-violet-300 dark:border-violet-700 pl-3">
+            Quiet environment with individual cabins, high‑speed WiFi, and a dedicated reading zone.
+          </p>
+
+          {/* Facilities grid */}
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 block">Facilities & Amenities</span>
+            <div className="grid grid-cols-4 gap-3">
+              {[
+                { icon: '📶', label: 'High-Speed\nWiFi' },
+                { icon: '❄️', label: 'Centralized\nAC' },
+                { icon: '📹', label: '24/7 CCTV\nSecurity' },
+                { icon: '⚡', label: 'Power Backup\n/ UPS' },
+                { icon: '🚰', label: 'RO Purified\nWater' },
+                { icon: '📰', label: 'Daily\nNewspapers' },
+                { icon: '🛋️', label: 'Sofa Lounge\nDesks' },
+                { icon: '🩷', label: 'Girls Safety\nWing' },
+              ].map((f) => (
+                <div key={f.label} className="flex flex-col items-center text-center gap-1.5 p-2 rounded-2xl bg-slate-50 dark:bg-[#12192e] border border-slate-100 dark:border-slate-800">
+                  <span className="text-xl">{f.icon}</span>
+                  <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-400 leading-tight whitespace-pre-line">{f.label}</span>
+                </div>
+              ))}
             </div>
           </div>
 
-          {seatLockToken && secondsLeft !== null && (
-            <div className="flex items-center gap-1.5 text-xs font-mono font-bold px-3 py-1.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 animate-pulse">
-              ⏱ {Math.floor(secondsLeft / 60)}:{String(secondsLeft % 60).padStart(2, '0')}
+          {/* Contact row */}
+          <div className="flex items-center justify-between gap-3 text-xs pt-1 border-t border-slate-100 dark:border-slate-800">
+            <a href={`tel:${library?.contact_number || ''}`} className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 hover:text-indigo-600 transition">
+              <span>📞</span>
+              <span className="font-bold">{library?.contact_number || '9926012345'}</span>
+              <span className="text-slate-400 text-[10px]">Official POC</span>
+            </a>
+            <a href={`mailto:${library?.email || 'owner@gmail.com'}`} className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 hover:text-indigo-600 transition">
+              <span>✉️</span>
+              <span className="font-bold truncate max-w-[120px]">{library?.email || 'owner.xyz@gmail.com'}</span>
+              <span className="text-slate-400 text-[10px]">Email</span>
+            </a>
+          </div>
+
+          {/* Open hours */}
+          <div className="flex items-center justify-between text-xs px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-[#12192e] border border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-2">
+              <span>🕐</span>
+              <span className="font-bold text-slate-800 dark:text-slate-200">Open Today</span>
+              <span className="text-slate-500">6:00 AM – 12:00 AM</span>
+            </div>
+            <span className="text-slate-400">›</span>
+          </div>
+
+          {/* Tab bar: Overview / Photos / Reviews / Rules */}
+          <div className="flex border-b border-slate-200 dark:border-slate-800 -mx-5 px-5 gap-5 text-sm">
+            {(['overview', 'photos', 'reviews', 'rules'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveDetailTab(tab)}
+                className={`pb-2 font-semibold text-sm border-b-2 capitalize transition ${
+                  activeDetailTab === tab
+                    ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                    : 'border-transparent text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                }`}
+              >
+                {tab === 'photos' ? `Photos${libraryPhotos.length > 0 ? ` (${libraryPhotos.length})` : ''}` : tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
+          </div>
+
+          {/* ── TABBED CONTENT ── */}
+          {activeDetailTab === 'overview' && (
+            <>
+              {/* About section */}
+              <div>
+                <h3 className="font-bold text-slate-900 dark:text-white mb-1">About This Library</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                  {library?.name || 'Pragya Study Zone'} is a peaceful and well-maintained study space located in the heart of Indore. It offers comfortable seating, personal cabins, and all essential amenities for focused study.
+                </p>
+                <button className="text-indigo-600 dark:text-indigo-400 text-xs font-bold mt-1 flex items-center gap-1">Read More ↓</button>
+              </div>
+
+              {/* Reviews preview */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-900 dark:text-white text-sm">Reviews (328)</span>
+                  <button onClick={() => setActiveDetailTab('reviews')} className="text-indigo-600 dark:text-indigo-400 text-xs font-bold">View All →</button>
+                </div>
+                <div className="flex gap-3 overflow-x-auto pb-1">
+                  {[{name:'Ananya S.', time:'2 weeks ago', text:'Very clean, peaceful environment. Perfect for long study hours!'}].map((r,i)=>(
+                    <div key={i} className="shrink-0 w-64 p-3 rounded-2xl bg-slate-50 dark:bg-[#12192e] border border-slate-100 dark:border-slate-800">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-7 h-7 rounded-full bg-indigo-500 text-white text-xs font-bold flex items-center justify-center">{r.name[0]}</div>
+                        <div>
+                          <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{r.name}</p>
+                          <div className="flex items-center gap-1">
+                            <span className="text-amber-500 text-xs">★★★★★</span>
+                            <span className="text-[10px] text-slate-400">{r.time}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{r.text}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ── PHOTOS TAB ── */}
+          {activeDetailTab === 'photos' && (
+            <div>
+              {libraryPhotos.length === 0 ? (
+                <div className="py-12 flex flex-col items-center gap-3 text-slate-400">
+                  <span className="text-5xl">📷</span>
+                  <p className="text-sm font-semibold">No photos uploaded yet</p>
+                  <p className="text-xs text-slate-400">The library owner hasn't added photos yet.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  {libraryPhotos.map((photo, i) => (
+                    <button
+                      key={photo.id}
+                      onClick={() => { setPhotoIndex(i); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                      className="relative aspect-square rounded-2xl overflow-hidden bg-slate-200 dark:bg-slate-800 hover:opacity-90 transition"
+                    >
+                      <img src={photo.url} alt={photo.caption || `Photo ${i + 1}`} className="w-full h-full object-cover" />
+                      {photo.caption && (
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                          <p className="text-white text-[11px] font-semibold truncate">{photo.caption}</p>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── REVIEWS TAB ── */}
+          {activeDetailTab === 'reviews' && (
+            <div className="space-y-3">
+              {[{name:'Ananya S.', stars: 5, time:'2 weeks ago', text:'Very clean, peaceful environment. Perfect for long study hours!'},{name:'Rahul M.', stars: 4, time:'1 month ago', text:'Great ambience and helpful staff. Would definitely visit again.'}].map((r,i) => (
+                <div key={i} className="p-3 rounded-2xl bg-slate-50 dark:bg-[#12192e] border border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className="w-8 h-8 rounded-full bg-indigo-500 text-white text-sm font-bold flex items-center justify-center">{r.name[0]}</div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{r.name}</p>
+                      <div className="flex items-center gap-1">
+                        <span className="text-amber-500 text-xs">{'★'.repeat(r.stars)}{'☆'.repeat(5-r.stars)}</span>
+                        <span className="text-[10px] text-slate-400">{r.time}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">{r.text}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── RULES TAB ── */}
+          {activeDetailTab === 'rules' && (
+            <div className="space-y-2">
+              {['Maintain silence inside the study hall at all times.','Mobile phones must be kept on silent mode.','Food and beverages are not allowed inside.','Students must carry a valid ID card.','Strictly no ragging or misbehaviour.','Seats cannot be reserved without booking.'].map((rule, i) => (
+                <div key={i} className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-[#12192e] border border-slate-100 dark:border-slate-800">
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 text-xs font-bold flex items-center justify-center mt-0.5">{i+1}</span>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">{rule}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Visitor Pass & Complaint quick actions */}
+          <div className="flex gap-3">
+            {library?.allowVisitorPasses !== false && (
+              <button
+                type="button"
+                onClick={() => setShowVisitorModal(true)}
+                className="flex-1 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs shadow-md shadow-violet-600/20 transition cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                🎟️ Request Visitor Pass
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowComplaintModal(true)}
+              className="flex-1 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              📢 Report Issue
+            </button>
+          </div>
+
+          {studentComplaints.length > 0 && (
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 space-y-2">
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block mb-1">
+                Your Active &amp; Recent Complaints ({studentComplaints.length})
+              </span>
+              <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                {studentComplaints.map((c: any) => (
+                  <div key={c.id} className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">{c.ticket_code}</span>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        c.status === 'RESOLVED'
+                          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                          : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                      }`}>
+                        {c.status}
+                      </span>
+                    </div>
+                    <p className="text-slate-800 dark:text-slate-200 font-medium">{c.description}</p>
+                    {c.owner_resolution_notes && (
+                      <p className="text-[11px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 p-2 rounded-lg font-semibold">
+                        📌 Warden Reply: {c.owner_resolution_notes}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
-      </div>
 
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-8 flex flex-col gap-8">
-        {/* ── STEP 1: LIBRARY DOSSIER, FACILITIES & CHOOSE SHIFT ── */}
-        <section className="space-y-6">
-          {/* Complete Library Dossier Card */}
+        {/* ── 3-STEP BOOKING WIZARD INDICATOR ── */}
+        <div className="bg-white dark:bg-[#0c1220] rounded-none sm:rounded-3xl shadow-sm px-5 pt-5 pb-3 mt-3 sm:mt-4">
+          {/* Thumbnail + library name row */}
+          <div className="flex items-center gap-3 mb-4">
+            {(() => {
+              const thumbSrc = libraryPhotos.length > 0
+                ? libraryPhotos[0].url
+                : 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=200&q=70';
+              return (
+                <img src={thumbSrc} alt={library?.name || 'Library'} className="w-14 h-14 rounded-2xl object-cover shrink-0 border border-slate-100 dark:border-slate-800" />
+              );
+            })()}
+            <div className="flex-1 min-w-0">
+              <p className="font-black text-slate-900 dark:text-white text-base leading-tight truncate">{library?.name || 'Library'}</p>
+              <p className="text-xs text-slate-400 truncate">{library?.locality && library?.city ? `${library.locality}, ${library.city}` : library?.city || ''}</p>
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">✅ Verified</span>
+            </div>
+          </div>
+
+          {/* Step pills */}
+          <div className="flex items-center gap-0">
+            {[
+              { num: 1, label: 'Time' },
+              { num: 2, label: 'Select Seat' },
+              { num: 3, label: 'Confirm' },
+            ].map((step, idx) => {
+              const isActive = !selectedSeat ? step.num === 1 : step.num <= 2;
+              const isDone   = selectedSeat && step.num === 1;
+              return (
+                <React.Fragment key={step.num}>
+                  <div className="flex flex-col items-center gap-1">
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black transition-all ${
+                      isDone
+                        ? 'bg-emerald-500 text-white'
+                        : isActive
+                        ? 'bg-violet-600 text-white shadow-md shadow-violet-500/30'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
+                    }`}>
+                      {isDone ? '✓' : step.num}
+                    </div>
+                    <span className={`text-[10px] font-bold ${
+                      isActive ? 'text-violet-600 dark:text-violet-400' : 'text-slate-400'
+                    }`}>{step.label}</span>
+                  </div>
+                  {idx < 2 && (
+                    <div className={`flex-1 h-[2px] mb-4 mx-1 rounded-full ${
+                      isDone || (selectedSeat && step.num === 1) ? 'bg-emerald-400' : 'bg-slate-200 dark:bg-slate-700'
+                    }`} />
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-[#0c1220] rounded-none sm:rounded-3xl shadow-sm px-5 py-5 mt-3 sm:mt-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-black text-slate-900 dark:text-white">Step 2: Choose Your Seat</h2>
+              <p className="text-[11px] text-slate-400 mt-0.5">Step 2 of 3</p>
+            </div>
+          </div>
+
+          {/* Seat legend */}
+          <div className="flex flex-wrap gap-3 text-[11px]">
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600" />
+              <span className="text-slate-500">Available</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 rounded bg-violet-600 border border-violet-700" />
+              <span className="text-slate-500">Selected</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 rounded bg-slate-400 dark:bg-slate-600 border border-slate-500" />
+              <span className="text-slate-500">Occupied</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-5 h-5 rounded bg-pink-200 dark:bg-pink-900/40 border border-pink-400" />
+              <span className="text-slate-500">Girls Only</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-amber-500 text-xs">⚡</span>
+              <span className="text-slate-500">Socket</span>
+            </div>
+          </div>
+
+          {/* View toggle */}
+          <div className="flex gap-2">
+            <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-violet-600 text-white text-xs font-bold shadow">⊞ Grid View</button>
+            <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold">≡ List View</button>
+            <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold">🗺️ Study Layout</button>
+          </div>
+
+          {/* ── ACTUAL SEAT MAP section begins below ── */}
+
           <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1220] p-6 shadow-sm space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
               <div>
@@ -1713,7 +2169,7 @@ export default function LibraryDetailPage() {
               </div>
             )}
           </div>
-        </section>
+        </div>
 
         {/* ── STEP 2: CHOOSE PHYSICAL CABIN SEAT ── */}
         <section>
@@ -1744,14 +2200,17 @@ export default function LibraryDetailPage() {
               <span className="flex items-center gap-1.5 font-medium">⚡ Socket</span>
             </div>
 
-            {/* Front label */}
-            <div className="text-center mb-3">
-              <span className="text-slate-400 dark:text-slate-600 text-[10px] uppercase tracking-widest">— Front / Entrance —</span>
+            {/* BookMyShow Style Front Screen / Entrance Indicator */}
+            <div className="w-full max-w-md mx-auto mb-5 text-center">
+              <div className="h-2 rounded-t-full bg-gradient-to-r from-violet-500/20 via-indigo-500 to-violet-500/20 mb-1"></div>
+              <span className="text-slate-500 dark:text-slate-400 text-[10px] font-extrabold uppercase tracking-widest">
+                ⬆️ STAGE / FRONT ENTRANCE THIS WAY
+              </span>
             </div>
 
-            {/* Dynamic Seat Grid — rows/cols from owner's onboarding layout */}
-            <div className="overflow-x-auto w-full">
-              <div className="flex flex-col gap-2.5 min-w-max mx-auto">
+            {/* Dynamic Seat Grid — BookMyShow Centered Layout */}
+            <div className="overflow-x-auto w-full pb-2 no-scrollbar flex justify-center">
+              <div className="flex flex-col gap-2.5 min-w-max mx-auto items-center p-2 rounded-2xl bg-slate-100/50 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60">
                 {Array.from(new Set(displayedSeats.map(s => s.row_idx)))
                   .sort((a, b) => a - b)
                   .map(rowIdx => {
@@ -1951,13 +2410,42 @@ export default function LibraryDetailPage() {
             );
           })()}
 
-          <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-3">
+          <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-3 pb-20 md:pb-4">
             {getSelectedSlotInfo().isFree
               ? 'Instant Confirmed Free Digital Pass · No Payment Required · Zero Hidden Charges'
               : 'Secure Desk Reservation · DPDP Identity Verification Included'}
           </p>
         </section>
       </main>
+
+      {/* ── BOOK MY SHOW STYLE STICKY BOTTOM BAR FOR MOBILE PHONES ── */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#0c1220]/95 border-t border-slate-200 dark:border-slate-800 p-3 shadow-2xl backdrop-blur-md flex items-center justify-between gap-3">
+        <div className="flex flex-col">
+          <span className="text-[10px] uppercase font-extrabold text-slate-400 tracking-wider">
+            {selectedSeat ? `Desk ${selectedSeat.seatCode}` : 'No Seat Picked'}
+          </span>
+          <span className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400">
+            {getSelectedSlotInfo().isFree ? '100% Free' : getSelectedSlotInfo().price}
+          </span>
+        </div>
+        <button
+          onClick={handleCheckout}
+          disabled={checkoutLoading}
+          className={`py-3 px-5 rounded-xl text-white font-extrabold text-xs shadow-lg transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ${
+            getSelectedSlotInfo().isFree
+              ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/30'
+              : 'bg-violet-600 hover:bg-violet-500 shadow-violet-500/30'
+          }`}
+        >
+          {checkoutLoading ? (
+            'Reserving...'
+          ) : selectedSeat ? (
+            getSelectedSlotInfo().isFree ? '⚡ Book Free Seat' : 'Confirm & Reserve →'
+          ) : (
+            'Select Seat Below'
+          )}
+        </button>
+      </div>
 
       {/* ── IN-MODAL GUEST HANDSHAKE AUTHENTICATION MODAL ── */}
       {showGuestModal && (
@@ -2582,9 +3070,9 @@ export default function LibraryDetailPage() {
               onSubmit={(e) => {
                 e.preventDefault();
                 setDynamicKycError(null);
-                const reqAadhaar = Boolean(identityRequirements?.requireAadhaarLast4 || isGovernment);
+                const reqAadhaar = Boolean(identityRequirements?.requireAadhaarLast4 || (isGovernment && !identityRequirements));
                 const reqPan = Boolean(identityRequirements?.requirePanMasked);
-                const reqExam = Boolean(identityRequirements?.requireTargetExam || isGovernment);
+                const reqExam = Boolean(identityRequirements?.requireTargetExam || (isGovernment && !identityRequirements));
                 const reqCollege = Boolean(identityRequirements?.requireCollegeName);
                 const reqCustom = identityRequirements?.customFields || [];
 
@@ -2656,7 +3144,7 @@ export default function LibraryDetailPage() {
                 />
               </div>
 
-              {(identityRequirements?.requireAadhaarLast4 || isGovernment) && (
+              {(identityRequirements?.requireAadhaarLast4 || (isGovernment && !identityRequirements)) && (
                 <div>
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Aadhaar Last 4 Digits *
@@ -2692,7 +3180,7 @@ export default function LibraryDetailPage() {
                 </div>
               )}
 
-              {(identityRequirements?.requireTargetExam || isGovernment) && (
+              {(identityRequirements?.requireTargetExam || (isGovernment && !identityRequirements)) && (
                 <div>
                   <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
                     Target Competitive Exam *
@@ -3049,45 +3537,91 @@ export default function LibraryDetailPage() {
               </div>
             ) : (
               <div className="space-y-3 text-xs">
-                <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                    Select Purpose of Visit *
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { id: 'CIRCULATION', label: '📖 Book Issue / Return' },
-                      { id: 'ENQUIRY_INSPECTION', label: '🔍 Facility Enquiry' },
-                      { id: 'DOCUMENT_SUBMISSION', label: '📄 Document Drop' },
-                      { id: 'GENERAL_VISIT', label: '👥 Meet Staff / Visit' },
-                    ].map(p => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => setVisitorPurpose(p.id)}
-                        className={`p-2.5 rounded-xl border text-left font-bold transition text-xs ${
-                          visitorPurpose === p.id
-                            ? 'bg-violet-600 text-white border-violet-600 shadow-sm'
-                            : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-violet-400'
-                        }`}
-                      >
-                        {p.label}
-                      </button>
-                    ))}
+                {((library?.libraryCategory || library?.library_category || 'PRIVATE').toUpperCase() === 'PRIVATE') ? (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Full Name *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={privateVisitorName}
+                        onChange={(e) => setPrivateVisitorName(e.target.value)}
+                        placeholder="e.g. John Doe"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-none focus:ring-2 focus:ring-violet-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Contact Number *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={privateVisitorContact}
+                        onChange={(e) => setPrivateVisitorContact(e.target.value)}
+                        placeholder="e.g. 9876543210"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-none focus:ring-2 focus:ring-violet-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Email Address *
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={privateVisitorEmail}
+                        onChange={(e) => setPrivateVisitorEmail(e.target.value)}
+                        placeholder="e.g. john@example.com"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-none focus:ring-2 focus:ring-violet-500"
+                      />
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                        Select Purpose of Visit *
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { id: 'CIRCULATION', label: '📖 Book Issue / Return' },
+                          { id: 'ENQUIRY_INSPECTION', label: '🔍 Facility Enquiry' },
+                          { id: 'DOCUMENT_SUBMISSION', label: '📄 Document Drop' },
+                          { id: 'GENERAL_VISIT', label: '👥 Meet Staff / Visit' },
+                        ].map(p => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => setVisitorPurpose(p.id)}
+                            className={`p-2.5 rounded-xl border text-left font-bold transition text-xs ${
+                              visitorPurpose === p.id
+                                ? 'bg-violet-600 text-white border-violet-600 shadow-sm'
+                                : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-violet-400'
+                            }`}
+                          >
+                            {p.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-                <div>
-                  <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Notes / Query (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={visitorNotes}
-                    onChange={(e) => setVisitorNotes(e.target.value)}
-                    placeholder="e.g. Want to return Java book #BK-102"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-none focus:ring-2 focus:ring-violet-500"
-                  />
-                </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+                        Notes / Query (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={visitorNotes}
+                        onChange={(e) => setVisitorNotes(e.target.value)}
+                        placeholder="e.g. Want to return Java book #BK-102"
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-xs outline-none focus:ring-2 focus:ring-violet-500"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex gap-2 pt-3">
                   <button
@@ -3111,6 +3645,58 @@ export default function LibraryDetailPage() {
           </div>
         </div>
       )}
+      {/* ── STICKY BOTTOM BOOKING BAR ── */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-[#0c1220] border-t border-slate-200 dark:border-slate-800 shadow-2xl shadow-slate-900/20 px-4 py-4">
+        <div className="max-w-2xl mx-auto flex items-center gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-baseline gap-1">
+              <span className="text-2xl font-black text-slate-900 dark:text-white">
+                {library?.isFree ? 'FREE' : activeShift ? `₹${activeShift.daily_price}` : '₹300'}
+              </span>
+              {!library?.isFree && <span className="text-xs text-slate-400 font-medium">per shift</span>}
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+              {activeShift?.shift_name || 'Morning Shift'} &bull; {activeShift ? `${formatTime(activeShift.start_time)} – ${formatTime(activeShift.end_time)}` : '6:00 AM – 12:00 PM'}
+            </p>
+            {selectedSeat && (
+              <p className="text-xs font-bold text-violet-600 dark:text-violet-400 mt-0.5 flex items-center gap-1">
+                <span>🪑</span> Seat {selectedSeat.seatCode} selected
+                <button
+                  onClick={() => setSelectedSeat(null)}
+                  className="ml-1 text-slate-400 hover:text-rose-500 transition text-[10px] font-normal cursor-pointer"
+                >
+                  Change
+                </button>
+              </p>
+            )}
+            {!selectedSeat && (
+              <button
+                onClick={() => document.querySelector('.seat-grid-section')?.scrollIntoView({ behavior: 'smooth' })}
+                className="text-xs text-indigo-500 font-bold mt-0.5 hover:underline"
+              >
+                View Details &rsaquo;
+              </button>
+            )}
+          </div>
+          <button
+            id="book-seat-btn"
+            type="button"
+            onClick={() => handleCheckout()}
+            disabled={checkoutLoading}
+            className="shrink-0 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 hover:from-violet-500 hover:to-blue-500 text-white font-extrabold text-sm shadow-lg shadow-violet-500/30 transition-all disabled:opacity-60 cursor-pointer flex items-center gap-2"
+          >
+            {checkoutLoading ? (
+              <span className="flex items-center gap-1.5"><span className="animate-spin">⏳</span> Booking...</span>
+            ) : (
+              <>Book a Seat <span className="text-base">→</span></>
+            )}
+          </button>
+        </div>
+        {checkoutError && (
+          <p className="max-w-2xl mx-auto text-xs text-rose-500 font-semibold mt-2 text-center">{checkoutError}</p>
+        )}
+      </div>
     </div>
   );
 }
+

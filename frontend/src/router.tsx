@@ -13,6 +13,7 @@ import StudentDashboardPage from './pages/StudentDashboardPage';
 import BookingConfirmationPage from './pages/BookingConfirmationPage';
 import OwnerPortalPage from './pages/OwnerPortalPage';
 import AboutPage from './pages/AboutPage';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const ADMIN_PORTS = ['5174', '5175'];
 
@@ -69,10 +70,10 @@ export const router = createBrowserRouter([
       { path: 'libraries/:id', element: <LibraryDetailPage /> },
       { path: 'libraries/:id/book', element: <LibraryDetailPage /> },
       { path: 'booking/:bookingId/confirmed', element: <BookingConfirmationPage /> },
-      { path: 'dashboard',     element: <StudentDashboardPage /> },
-      { path: 'owner/portal',  element: <OwnerPortalPage /> },
-      { path: 'owner/dashboard', element: <OwnerPortalPage /> },
-      { path: 'owner/onboarding', element: <OwnerPortalPage /> },
+      { path: 'dashboard',     element: <ProtectedRoute allowedRole="STUDENT"><StudentDashboardPage /></ProtectedRoute> },
+      { path: 'owner/portal',  element: <ProtectedRoute allowedRole="LIBRARY_OWNER"><OwnerPortalPage /></ProtectedRoute> },
+      { path: 'owner/dashboard', element: <ProtectedRoute allowedRole="LIBRARY_OWNER"><OwnerPortalPage /></ProtectedRoute> },
+      { path: 'owner/onboarding', element: <ProtectedRoute allowedRole="LIBRARY_OWNER"><OwnerPortalPage /></ProtectedRoute> },
       { path: 'auth/callback', element: <AuthCallbackPage /> },
     ]
   }

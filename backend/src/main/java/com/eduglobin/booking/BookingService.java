@@ -26,6 +26,7 @@ public class BookingService {
     private final QrPassService qrPassService;
     private final SingleActiveSeatRuleService singleActiveSeatRuleService;
     private final FlexibleSlotAvailabilityService flexibleSlotService;
+    private final StudentLibraryProfileUpsertService profileUpsertService;
 
     public BookingService(NamedParameterJdbcTemplate jdbcTemplate,
                           ResourceLockService lockService,
@@ -33,7 +34,8 @@ public class BookingService {
                           SeatStatusBroadcaster broadcaster,
                           QrPassService qrPassService,
                           SingleActiveSeatRuleService singleActiveSeatRuleService,
-                          FlexibleSlotAvailabilityService flexibleSlotService) {
+                          FlexibleSlotAvailabilityService flexibleSlotService,
+                          StudentLibraryProfileUpsertService profileUpsertService) {
         this.jdbcTemplate = jdbcTemplate;
         this.lockService = lockService;
         this.lockerService = lockerService;
@@ -41,6 +43,7 @@ public class BookingService {
         this.qrPassService = qrPassService;
         this.singleActiveSeatRuleService = singleActiveSeatRuleService;
         this.flexibleSlotService = flexibleSlotService;
+        this.profileUpsertService = profileUpsertService;
     }
 
     @Transactional
@@ -75,6 +78,49 @@ public class BookingService {
         } catch (EduGlobinException ex) {
             throw ex;
         } catch (Exception ignored) {}
+        // Student profile already exists in 'profiles' table (created at registration).
+        // No insert needed here — attempting one with a hardcoded dummy email caused
+        // a unique constraint violation that poisoned this @Transactional method.
+
+
+        // Resolve valid shift_id for library to prevent FK constraint violation
+        UUID shiftId = req.getShiftId();
+        if (shiftId != null) {
+            try {
+                Integer count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM shifts WHERE id = :sid",
+                    new MapSqlParameterSource("sid", shiftId),
+                    Integer.class
+                );
+                if (count == null || count == 0) {
+                    shiftId = null;
+                }
+            } catch (Exception ignored) {
+                shiftId = null;
+            }
+        }
+        if (shiftId == null && req.getLibraryId() != null) {
+            try {
+                List<UUID> shiftsList = jdbcTemplate.query(
+                    "SELECT id FROM shifts WHERE library_id = :lid LIMIT 1",
+                    new MapSqlParameterSource("lid", req.getLibraryId()),
+                    (rs, rowNum) -> (UUID) rs.getObject("id")
+                );
+                if (!shiftsList.isEmpty()) {
+                    shiftId = shiftsList.get(0);
+                } else {
+                    shiftId = UUID.randomUUID();
+                    jdbcTemplate.update(
+                        "INSERT INTO shifts (id, library_id, shift_name, start_time, end_time, daily_price, monthly_price) " +
+                        "VALUES (:id, :lid, 'General Shift', '06:00:00', '23:00:00', 150, 800)",
+                        new MapSqlParameterSource("id", shiftId).addValue("lid", req.getLibraryId())
+                    );
+                }
+            } catch (Exception ignored) {}
+        }
+        if (shiftId != null) {
+            req.setShiftId(shiftId);
+        }
 
         // 3. Check if library is free (Module 13) or direct booking (Razorpay integration mode)
         boolean isFree = isLibraryFree(req.getLibraryId(), req.getShiftId());
@@ -82,12 +128,10 @@ public class BookingService {
 
         if (isFree) {
             paymentMode = "FREE";
+        } else if (req.getPaymentMode() != null && !req.getPaymentMode().isBlank()) {
+            paymentMode = req.getPaymentMode().toUpperCase().trim();
         } else {
-            // Direct student reservation mode: allow direct booking (prior to Razorpay live gateway hookup)
-            if (req.getPaymentNonce() == null || req.getPaymentNonce().isBlank()) {
-                req.setPaymentNonce("DIRECT_BOOKING_" + System.currentTimeMillis());
-            }
-            paymentMode = "DIRECT_BOOKING";
+            paymentMode = "ONLINE";
         }
 
         // 4. Resolve Pricing
@@ -202,114 +246,83 @@ public class BookingService {
         } catch (Exception ignored) {}
 
         // 6. Insert Booking
-        String insertBookingSql = "INSERT INTO bookings (" +
-                "id, booking_reference, student_id, library_id, shift_id, seat_id, locker_id, " +
-                "pass_type, amount_paid, locker_fee, qr_payload_hash, valid_from, valid_until, " +
-                "status, booking_source, payment_mode, owner_confirmation_status, owner_confirmation_deadline, " +
-                "college_id_number, college_email, student_age, degree_program, branch_department" +
-                ") VALUES (" +
-                ":id, :bookingRef, CAST(:studentId AS uuid), :libraryId, :shiftId, :seatId, :lockerId, " +
-                ":passType, :amountPaid, :lockerFee, :qrPayload, :validFrom, :validUntil, " +
-                "'BOOKED', 'ONLINE', :paymentMode, :ownerConfirmStatus, :confirmDeadline, " +
-                ":collegeIdNumber, :collegeEmail, :studentAge, :degreeProgram, :branchDepartment" +
-                ")";
-
-        MapSqlParameterSource bookingParams = new MapSqlParameterSource()
-                .addValue("id", bookingId)
-                .addValue("bookingRef", bookingRef)
-                .addValue("studentId", studentId)
-                .addValue("libraryId", req.getLibraryId())
-                .addValue("shiftId", req.getShiftId())
-                .addValue("seatId", req.getSeatId())
-                .addValue("lockerId", req.getLockerId())
-                .addValue("passType", req.getPassType() != null ? req.getPassType().name() : "HOURLY")
-                .addValue("amountPaid", seatPrice)
-                .addValue("lockerFee", lockerFee)
-                .addValue("qrPayload", qrPayload)
-                .addValue("paymentMode", paymentMode)
-                .addValue("ownerConfirmStatus", ownerConfirmStatus)
-                .addValue("validFrom", Timestamp.from(validFrom))
-                .addValue("validUntil", Timestamp.from(validUntil))
-                .addValue("confirmDeadline", Timestamp.from(confirmDeadline))
-                .addValue("collegeIdNumber", req.getCollegeIdNumber())
-                .addValue("collegeEmail", req.getCollegeEmail())
-                .addValue("studentAge", req.getStudentAge())
-                .addValue("degreeProgram", req.getDegreeProgram())
-                .addValue("branchDepartment", req.getBranchDepartment());
-
-        jdbcTemplate.update(insertBookingSql, bookingParams);
-
-        // Auto-upsert into student_library_profiles for (studentId, libraryId)
         try {
-            String aadhaar = req.getAadhaarLast4();
-            String maskedAadhaar = aadhaar != null && !aadhaar.isBlank() ? "XXXX-XXXX-" + aadhaar.trim() : null;
-            String customJson = "{}";
-            if (req.getCustomFields() != null && !req.getCustomFields().isEmpty()) {
-                customJson = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(req.getCustomFields());
-            }
+            String insertBookingSql = "INSERT INTO bookings (" +
+                    "id, booking_reference, student_id, library_id, shift_id, seat_id, locker_id, " +
+                    "pass_type, amount_paid, locker_fee, qr_payload_hash, valid_from, valid_until, " +
+                    "status, booking_source, payment_mode, owner_confirmation_status, owner_confirmation_deadline, " +
+                    "college_id_number, college_email, student_age, degree_program, branch_department" +
+                    ") VALUES (" +
+                    ":id, :bookingRef, CAST(:studentId AS uuid), :libraryId, :shiftId, :seatId, :lockerId, " +
+                    ":passType, :amountPaid, :lockerFee, :qrPayload, :validFrom, :validUntil, " +
+                    "'BOOKED', 'ONLINE', :paymentMode, :ownerConfirmStatus, :confirmDeadline, " +
+                    ":collegeIdNumber, :collegeEmail, :studentAge, :degreeProgram, :branchDepartment" +
+                    ")";
 
-            String upsertProfileSql = """
-                INSERT INTO student_library_profiles (
-                    id, student_id, library_id, library_category, institute_email, institute_id_number,
-                    branch, year, gender, full_name, phone_number, masked_aadhaar, masked_pan, target_exam,
-                    custom_identity_fields, is_claimed, claimed_at, is_active, created_at, updated_at
-                ) VALUES (
-                    gen_random_uuid(), CAST(:sid AS uuid), :lid, :cat, :email, :idNum,
-                    :branch, :year, :gender, :fullName, :phone, :maskedAadhaar, :maskedPan, :targetExam,
-                    CAST(:customFields AS jsonb), TRUE, NOW(), TRUE, NOW(), NOW()
-                )
-                ON CONFLICT (student_id, library_id) DO UPDATE SET
-                    library_category = EXCLUDED.library_category,
-                    institute_email = COALESCE(EXCLUDED.institute_email, student_library_profiles.institute_email),
-                    institute_id_number = COALESCE(EXCLUDED.institute_id_number, student_library_profiles.institute_id_number),
-                    branch = COALESCE(EXCLUDED.branch, student_library_profiles.branch),
-                    year = COALESCE(EXCLUDED.year, student_library_profiles.year),
-                    gender = COALESCE(EXCLUDED.gender, student_library_profiles.gender),
-                    full_name = COALESCE(EXCLUDED.full_name, student_library_profiles.full_name),
-                    phone_number = COALESCE(EXCLUDED.phone_number, student_library_profiles.phone_number),
-                    masked_aadhaar = COALESCE(EXCLUDED.masked_aadhaar, student_library_profiles.masked_aadhaar),
-                    masked_pan = COALESCE(EXCLUDED.masked_pan, student_library_profiles.masked_pan),
-                    target_exam = COALESCE(EXCLUDED.target_exam, student_library_profiles.target_exam),
-                    custom_identity_fields = COALESCE(EXCLUDED.custom_identity_fields, student_library_profiles.custom_identity_fields),
-                    is_claimed = TRUE,
-                    claimed_at = COALESCE(student_library_profiles.claimed_at, NOW()),
-                    updated_at = NOW()
-                """;
+            MapSqlParameterSource bookingParams = new MapSqlParameterSource()
+                    .addValue("id", bookingId)
+                    .addValue("bookingRef", bookingRef)
+                    .addValue("studentId", studentId)
+                    .addValue("libraryId", req.getLibraryId())
+                    .addValue("shiftId", req.getShiftId())
+                    .addValue("seatId", req.getSeatId())
+                    .addValue("lockerId", req.getLockerId())
+                    .addValue("passType", req.getPassType() != null ? req.getPassType().name() : "HOURLY")
+                    .addValue("amountPaid", seatPrice)
+                    .addValue("lockerFee", lockerFee)
+                    .addValue("qrPayload", qrPayload)
+                    .addValue("paymentMode", paymentMode)
+                    .addValue("ownerConfirmStatus", ownerConfirmStatus)
+                    .addValue("validFrom", Timestamp.from(validFrom))
+                    .addValue("validUntil", Timestamp.from(validUntil))
+                    .addValue("confirmDeadline", Timestamp.from(confirmDeadline))
+                    .addValue("collegeIdNumber", req.getCollegeIdNumber())
+                    .addValue("collegeEmail", req.getCollegeEmail())
+                    .addValue("studentAge", req.getStudentAge())
+                    .addValue("degreeProgram", req.getDegreeProgram())
+                    .addValue("branchDepartment", req.getBranchDepartment());
 
-            jdbcTemplate.update(upsertProfileSql, new MapSqlParameterSource()
-                    .addValue("sid", studentId)
-                    .addValue("lid", req.getLibraryId())
-                    .addValue("cat", category)
-                    .addValue("email", req.getCollegeEmail())
-                    .addValue("idNum", req.getCollegeIdNumber())
-                    .addValue("branch", req.getBranchDepartment())
-                    .addValue("year", req.getDegreeProgram())
-                    .addValue("gender", req.getStudentGender())
-                    .addValue("fullName", req.getFullName())
-                    .addValue("phone", req.getPhone())
-                    .addValue("maskedAadhaar", maskedAadhaar)
-                    .addValue("maskedPan", req.getPanNumber())
-                    .addValue("targetExam", req.getTargetExam())
-                    .addValue("customFields", customJson)
-            );
+            jdbcTemplate.update(insertBookingSql, bookingParams);
 
-            if (req.getCollegeIdNumber() != null && !req.getCollegeIdNumber().isBlank()) {
-                jdbcTemplate.update(
-                        "UPDATE owner_pre_registered_students SET is_claimed = TRUE, claimed_at = NOW() WHERE library_id = :lid AND LOWER(id_number) = LOWER(:idNum)",
-                        new MapSqlParameterSource("lid", req.getLibraryId()).addValue("idNum", req.getCollegeIdNumber())
+            // Auto-upsert into student_library_profiles for (studentId, libraryId).
+            // Runs in its own REQUIRES_NEW transaction so a failure here CANNOT
+            // poison the outer booking transaction (avoids 25P02 on seat UPDATE).
+            try {
+                String aadhaar = req.getAadhaarLast4();
+                String maskedAadhaar = aadhaar != null && !aadhaar.isBlank() ? "XXXX-XXXX-" + aadhaar.trim() : null;
+                String customJson = "{}";
+                if (req.getCustomFields() != null && !req.getCustomFields().isEmpty()) {
+                    customJson = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(req.getCustomFields());
+                }
+                profileUpsertService.upsert(
+                        UUID.fromString(studentId), req.getLibraryId(), category,
+                        req.getCollegeEmail(), req.getCollegeIdNumber(),
+                        req.getBranchDepartment(), req.getDegreeProgram(),
+                        req.getStudentGender(), req.getFullName(), req.getPhone(),
+                        maskedAadhaar, req.getPanNumber(), req.getTargetExam(), customJson
                 );
+            } catch (Exception profileEx) {
+                // Non-fatal: profile upsert failed in its own sub-transaction.
+                // The booking itself is still valid — log and continue.
+                System.err.println("[BookingService] profile upsert failed (non-fatal): " + profileEx.getMessage());
             }
-        } catch (Exception ignored) {}
 
-        // 7. Update database statuses to BOOKED
-        jdbcTemplate.update("UPDATE seat_desks SET current_status = 'BOOKED' WHERE id = :seatId",
-                new MapSqlParameterSource("seatId", req.getSeatId()));
-        broadcaster.broadcastSeatUpdate(req.getLibraryId(), req.getSeatId(), "BOOKED");
+            // 7. Update database statuses to BOOKED
+            jdbcTemplate.update("UPDATE seat_desks SET current_status = 'BOOKED' WHERE id = :seatId",
+                    new MapSqlParameterSource("seatId", req.getSeatId()));
+            broadcaster.broadcastSeatUpdate(req.getLibraryId(), req.getSeatId(), "BOOKED");
 
-        if (req.getLockerId() != null) {
-            jdbcTemplate.update("UPDATE lockers SET current_status = 'BOOKED' WHERE id = :lockerId",
-                    new MapSqlParameterSource("lockerId", req.getLockerId()));
-            broadcaster.broadcastLockerUpdate(req.getLibraryId(), req.getLockerId(), "BOOKED");
+            if (req.getLockerId() != null) {
+                jdbcTemplate.update("UPDATE lockers SET current_status = 'BOOKED' WHERE id = :lockerId",
+                        new MapSqlParameterSource("lockerId", req.getLockerId()));
+                broadcaster.broadcastLockerUpdate(req.getLibraryId(), req.getLockerId(), "BOOKED");
+            }
+        } catch (Exception e) {
+            lockService.release("SEAT", req.getSeatId(), req.getSeatLockToken());
+            if (req.getLockerId() != null && req.getLockerLockToken() != null) {
+                lockService.release("LOCKER", req.getLockerId(), req.getLockerLockToken());
+            }
+            throw new EduGlobinException("Booking failed due to an error: " + e.getMessage());
         }
 
         // 8. Release Redis locks

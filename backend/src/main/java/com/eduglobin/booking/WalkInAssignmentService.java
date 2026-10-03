@@ -175,9 +175,9 @@ public class WalkInAssignmentService {
                 "FROM libraries WHERE id = :libId";
         Map<String, Object> lib = jdbcTemplate.queryForMap(libSql, new MapSqlParameterSource("libId", libraryId));
         
-        String reqPaymentMode = req.containsKey("paymentMode") && req.get("paymentMode") != null
-                ? req.get("paymentMode").toString().toUpperCase()
-                : ("INSTITUTE".equalsIgnoreCase((String) lib.get("category")) || Boolean.TRUE.equals(lib.get("is_free")) ? "FREE" : "CASH");
+        boolean isFreeLibrary = "INSTITUTE".equalsIgnoreCase((String) lib.get("category")) || Boolean.TRUE.equals(lib.get("is_free"));
+        String reqPaymentMode = isFreeLibrary ? "FREE" : (req.containsKey("paymentMode") && req.get("paymentMode") != null
+                ? req.get("paymentMode").toString().toUpperCase() : "CASH");
 
         boolean isFree = "FREE".equalsIgnoreCase(reqPaymentMode);
 
@@ -254,6 +254,22 @@ public class WalkInAssignmentService {
             res.put("status", "IN_USE");
             res.put("isFree", true);
             res.put("message", "Seat " + seatCode + " assigned to " + fullName + " (Free Institute Admission).");
+            try {
+                String crmSql = "INSERT INTO student_crm_records (" +
+                        "id, library_id, seat_id, student_name, contact_number, " +
+                        "aadhaar_verified, monthly_fee, admission_fee, advance_paid, pending_balance, payment_status, " +
+                        "is_vacated, created_at) " +
+                        "VALUES (gen_random_uuid(), :libId, :seatId, :studentName, :contactNumber, " +
+                        "FALSE, 0.00, 0.00, 0.00, 0.00, 'PREPAID', " +
+                        "FALSE, CURRENT_TIMESTAMP)";
+                jdbcTemplate.update(crmSql, new MapSqlParameterSource()
+                        .addValue("libId", libraryId)
+                        .addValue("seatId", seatId)
+                        .addValue("studentName", fullName)
+                        .addValue("contactNumber", phone)
+                );
+            } catch (Exception ignored) {}
+
             return res;
         } else {
             // Paid Private Library Walk-in (Cash or UPI via existing WalkInService)
@@ -289,6 +305,23 @@ public class WalkInAssignmentService {
             paidRes.put("seatCode", seatCode);
             paidRes.put("amount", amount);
             paidRes.put("isFree", false);
+            try {
+                String crmSql = "INSERT INTO student_crm_records (" +
+                        "id, library_id, seat_id, student_name, contact_number, " +
+                        "aadhaar_verified, monthly_fee, admission_fee, advance_paid, pending_balance, payment_status, " +
+                        "is_vacated, created_at) " +
+                        "VALUES (gen_random_uuid(), :libId, :seatId, :studentName, :contactNumber, " +
+                        "FALSE, :amountPaid, 0.00, :amountPaid, 0.00, 'PREPAID', " +
+                        "FALSE, CURRENT_TIMESTAMP)";
+                jdbcTemplate.update(crmSql, new MapSqlParameterSource()
+                        .addValue("libId", libraryId)
+                        .addValue("seatId", seatId)
+                        .addValue("studentName", fullName)
+                        .addValue("contactNumber", phone)
+                        .addValue("amountPaid", amount)
+                );
+            } catch (Exception ignored) {}
+
             return paidRes;
         }
     }

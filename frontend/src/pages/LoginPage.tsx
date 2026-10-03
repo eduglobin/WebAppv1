@@ -335,7 +335,7 @@ export default function LoginPage({ activeTabProp, isSignUpProp, lockedToTab = f
         <div className="text-center mb-6">
           {/* Brand Logo */}
           <div className="inline-flex items-center justify-center mb-0.5">
-            <img src="/logov1.png" alt="EduGlobin Logo" className="h-24 w-auto object-contain select-none pointer-events-none" />
+            <img src="/logov1.png" alt="EduGlobin Logo" className="h-24 w-24 object-cover rounded-full select-none pointer-events-none" />
           </div>
           
           {/* Two-tone text and orange dot i */}
@@ -362,13 +362,13 @@ export default function LoginPage({ activeTabProp, isSignUpProp, lockedToTab = f
 
           {/* Tab Switcher — hidden when locked to a single role */}
           {!lockedToTab ? (
-            <div className="flex rounded-2xl bg-slate-100 dark:bg-white/5 p-1.5 gap-1 mb-6 transition-colors">
+            <div className="flex rounded-2xl bg-slate-100 dark:bg-white/5 p-1.5 gap-1 mb-6 transition-colors overflow-x-auto whitespace-nowrap no-scrollbar scrollbar-none">
               {tabs.map(tab => (
                 <button
                   key={tab.key}
                   id={`tab-${tab.key}`}
                   onClick={() => switchTab(tab.key)}
-                  className={`flex-1 py-2 px-1 rounded-xl text-xs font-bold transition-all duration-300 ${
+                  className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-bold transition-all duration-300 shrink-0 whitespace-nowrap ${
                     activeTab === tab.key
                       ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-600/20'
                       : 'text-slate-500 hover:text-slate-800 dark:text-white/40 dark:hover:text-white/80'

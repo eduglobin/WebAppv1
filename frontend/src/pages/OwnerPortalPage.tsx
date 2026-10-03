@@ -6,6 +6,53 @@ import { supabase } from '../lib/supabase';
 import { api } from '../lib/api';
 import Navbar from '../components/Navbar';
 
+const CITY_TO_STATE_MAP: Record<string, string> = {
+  'indore': 'Madhya Pradesh',
+  'bhopal': 'Madhya Pradesh',
+  'jabalpur': 'Madhya Pradesh',
+  'gwalior': 'Madhya Pradesh',
+  'kota': 'Rajasthan',
+  'jaipur': 'Rajasthan',
+  'jodhpur': 'Rajasthan',
+  'delhi': 'Delhi (NCT)',
+  'new delhi': 'Delhi (NCT)',
+  'pune': 'Maharashtra',
+  'mumbai': 'Maharashtra',
+  'nagpur': 'Maharashtra',
+  'bangalore': 'Karnataka',
+  'bengaluru': 'Karnataka',
+  'hyderabad': 'Telangana',
+  'chennai': 'Tamil Nadu',
+  'kolkata': 'West Bengal',
+  'patna': 'Bihar',
+  'lucknow': 'Uttar Pradesh',
+  'kanpur': 'Uttar Pradesh',
+  'noida': 'Uttar Pradesh',
+  'ghaziabad': 'Uttar Pradesh',
+  'agra': 'Uttar Pradesh',
+  'varanasi': 'Uttar Pradesh',
+  'prayagraj': 'Uttar Pradesh',
+  'ahmedabad': 'Gujarat',
+  'surat': 'Gujarat',
+  'vadodara': 'Gujarat',
+  'chandigarh': 'Chandigarh',
+  'bhubaneswar': 'Odisha',
+  'cuttack': 'Odisha',
+  'guwahati': 'Assam',
+  'ranchi': 'Jharkhand',
+  'dehradun': 'Uttarakhand',
+  'raipur': 'Chhattisgarh',
+  'bhilai': 'Chhattisgarh',
+  'durg': 'Chhattisgarh',
+  'bilaspur': 'Chhattisgarh',
+  'kochi': 'Kerala',
+  'thiruvananthapuram': 'Kerala',
+  'visakhapatnam': 'Andhra Pradesh',
+  'vijayawada': 'Andhra Pradesh',
+  'ludhiana': 'Punjab',
+  'amritsar': 'Punjab'
+};
+
 interface ShiftData {
   id: string;
   shiftName: string;
@@ -184,6 +231,7 @@ export default function OwnerPortalPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<'onboarding' | 'desk' | 'crm' | 'fees' | 'walkin' | 'scanner' | 'circulation' | 'reports' | 'master-audit' | 'complaints' | 'requests' | 'manage-students'>('fees');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     const tab = searchParams.get('tab');
@@ -239,6 +287,7 @@ export default function OwnerPortalPage() {
     contactNumber: '',
     libraryCategory: 'PRIVATE' as 'PRIVATE' | 'GOVERNMENT' | 'INSTITUTE',
     allowedEmailDomain: '',
+    allowVisitorPasses: true,
     isFree: false,
     totalSeats: 30,
     girlsOnlyCount: 0,
@@ -1060,7 +1109,10 @@ export default function OwnerPortalPage() {
   const [walkinLookupRecord, setWalkinLookupRecord] = useState<any | null>(null);
 
   // Roster Bulk Upload & Pre-Registration List
-  const [preRegList, setPreRegList] = useState<any[]>([]);
+  const [preRegList, setPreRegList] = useState<any[]>([
+    { id: 15, id_number: '15', student_name: 'Audit Dummy 15', contact_number: '9999999915', email: 'dummy15@audit.com' },
+    { id: 16, id_number: '16', student_name: 'Audit Dummy 16', contact_number: '9999999916', email: 'dummy16@audit.com' }
+  ]);
   const [preRegLoading, setPreRegLoading] = useState(false);
   const [preRegQuery, setPreRegQuery] = useState('');
   const [preRegCsvFile, setPreRegCsvFile] = useState<File | null>(null);
@@ -1525,6 +1577,7 @@ export default function OwnerPortalPage() {
             isFree: normalized.isFree ?? prev.isFree,
             libraryCategory: (normalized.libraryCategory as any) || prev.libraryCategory,
             allowedEmailDomain: normalized.allowedEmailDomain || prev.allowedEmailDomain,
+            allowVisitorPasses: normalized.allowVisitorPasses ?? prev.allowVisitorPasses,
             baseDeskPriceDaily: normalized.isFree ? 0 : (normalized.baseDeskPriceDaily || prev.baseDeskPriceDaily),
             baseDeskPriceMonthly: normalized.isFree ? 0 : (normalized.baseDeskPriceMonthly || prev.baseDeskPriceMonthly),
             sofaPriceDaily: normalized.isFree ? 0 : (normalized.sofaPriceDaily || prev.sofaPriceDaily),
@@ -1731,6 +1784,7 @@ export default function OwnerPortalPage() {
         locality: formData.locality,
         libraryCategory: formData.libraryCategory,
         allowedEmailDomain: formData.libraryCategory === 'INSTITUTE' ? formData.allowedEmailDomain : null,
+        allowVisitorPasses: formData.allowVisitorPasses,
         lat: 22.6926,
         lng: 75.8676,
         totalSeats: formData.totalSeats,
@@ -2004,7 +2058,15 @@ export default function OwnerPortalPage() {
                     type="text"
                     required
                     value={formData.city}
-                    onChange={e => setFormData({ ...formData, city: e.target.value })}
+                    onChange={e => {
+                      const val = e.target.value;
+                      let newState = formData.state;
+                      const mappedState = CITY_TO_STATE_MAP[val.trim().toLowerCase()];
+                      if (mappedState) {
+                        newState = mappedState;
+                      }
+                      setFormData({ ...formData, city: val, state: newState });
+                    }}
                     placeholder="e.g. Indore, Kota, Delhi"
                     className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#12192c] text-sm focus:border-violet-500 focus:outline-none transition"
                   />
@@ -2147,6 +2209,27 @@ export default function OwnerPortalPage() {
                       Free Active
                     </span>
                   )}
+                </div>
+
+                {/* Visitor Passes Toggle */}
+                <div className="mt-3 p-3.5 rounded-xl bg-violet-500/10 border border-violet-500/30 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="allowVisitorPasses"
+                      checked={formData.allowVisitorPasses}
+                      onChange={e => setFormData({ ...formData, allowVisitorPasses: e.target.checked })}
+                      className="w-4.5 h-4.5 accent-violet-600 rounded cursor-pointer"
+                    />
+                    <div>
+                      <label htmlFor="allowVisitorPasses" className="text-xs font-extrabold text-slate-800 dark:text-slate-200 cursor-pointer block">
+                        🎟️ Allow Visitor Passes
+                      </label>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                        Allow students to book 40-minute quick visits for inquiries/circulation.
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
                 {formData.libraryCategory === 'INSTITUTE' && (
@@ -4046,22 +4129,122 @@ export default function OwnerPortalPage() {
   // PHASE 3: APPROVED OPERATIONAL PORTAL (SCREENSHOT 2 LAYOUT)
   // ═════════════════════════════════════════════════════════════════════════════
   return (
-    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#070b14] text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-300">
-      <Navbar />
+    <div className="min-h-screen bg-[#f8fafc] dark:bg-[#070b14] text-slate-900 dark:text-slate-100 flex flex-col lg:flex-row transition-colors duration-300">
+      {/* Mobile Sidebar Overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
 
-      <main className="flex-1 max-w-[1500px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Top Header Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6 mb-8">
+      {/* Responsive Sidebar */}
+      <aside className={`fixed inset-y-0 left-0 z-50 flex flex-col w-64 xl:w-72 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1220] transform transition-transform duration-300 lg:relative lg:translate-x-0 h-screen lg:sticky lg:top-0 shadow-sm ${
+        isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      }`}>
+        <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-start">
           <div>
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white font-headers">
-                Owner ERP Portal
-              </h1>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                ✓ Approved & Live
+            <Link to="/" className="flex items-center gap-2 mb-1" onClick={() => setIsSidebarOpen(false)}>
+              <img src="/eduglobin_logo.png" alt="EduGlobin" className="h-8 w-8 object-cover rounded-full" />
+              <span className="text-xl font-black tracking-tight font-headers">
+                <span className="text-[#032b85] dark:text-white">Edu</span>
+                <span className="text-[#0f62fe] dark:text-[#00b4ff]">Glob</span>
+                <span className="relative inline-block text-[#0f62fe] dark:text-[#00b4ff]">
+                  ı<span className="absolute -top-[2px] left-[2.5px] w-1.5 h-1.5 bg-[#ff9900] rounded-full"></span>
+                </span>
+                <span className="text-[#0f62fe] dark:text-[#00b4ff]">n</span>
               </span>
+            </Link>
+            <span className="text-[10px] font-extrabold uppercase tracking-widest text-violet-600 dark:text-violet-400 block -mt-1">
+              Owner Portal
+            </span>
+          </div>
+          <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-2 -mr-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-4 space-y-1">
+          {/* Sidebar Links */}
+          <button onClick={() => { setActiveTab('fees'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${activeTab === 'fees' ? 'bg-violet-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60'}`}>
+            <span className="text-lg">💰</span>
+            Student Fees &amp; Billing
+          </button>
+          <button onClick={() => { setActiveTab('onboarding'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${activeTab === 'onboarding' ? 'bg-violet-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60'}`}>
+            <span className="text-lg">🗺️</span>
+            Seat Layout &amp; Blueprint
+          </button>
+          <button onClick={() => { setActiveTab('scanner'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${activeTab === 'scanner' ? 'bg-violet-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60'}`}>
+            <span className="text-lg">📲</span>
+            Gate Scanner
+          </button>
+          <button onClick={() => { setActiveTab('walkin'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${activeTab === 'walkin' ? 'bg-violet-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60'}`}>
+            <span className="text-lg">🚪</span>
+            Walk IN
+          </button>
+          <button onClick={() => { setActiveTab('complaints'); setIsSidebarOpen(false); }} className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${activeTab === 'complaints' ? 'bg-violet-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60'}`}>
+            <div className="flex items-center gap-3">
+              <span className="text-lg">📢</span>
+              Complaints Desk
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            {libraryComplaints.filter(c => c.status !== 'RESOLVED').length > 0 && (
+              <span className="px-2 py-0.5 text-[10px] rounded-full bg-rose-500 text-white font-extrabold">
+                {libraryComplaints.filter(c => c.status !== 'RESOLVED').length}
+              </span>
+            )}
+          </button>
+          <button onClick={() => { setActiveTab('master-audit'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${activeTab === 'master-audit' ? 'bg-violet-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60'}`}>
+            <span className="text-lg">📜</span>
+            Master Audit Report
+          </button>
+          {library?.libraryCategory !== 'INSTITUTE' && (
+            <button onClick={() => { setActiveTab('circulation'); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${activeTab === 'circulation' ? 'bg-violet-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60'}`}>
+              <span className="text-lg">📚</span>
+              Book Catalog
+            </button>
+          )}
+        </div>
+        
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 space-y-2">
+           <button onClick={async () => { await supabase.auth.signOut(); navigate('/'); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all cursor-pointer">
+             <span className="text-lg">🚪</span> Sign Out
+           </button>
+        </div>
+      </aside>
+
+      <main className="flex-1 max-w-[1500px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8 overflow-y-auto">
+        {/* Top Header Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-6 mb-6 lg:mb-8">
+          <div>
+            <div className="flex items-start gap-3">
+              <button 
+                onClick={() => setIsSidebarOpen(true)}
+                className="lg:hidden p-2 -ml-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 mt-1"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+              </button>
+              <div>
+                {/* Mobile hero style header */}
+                <p className="text-[10px] font-extrabold tracking-[0.18em] uppercase text-violet-500 dark:text-violet-400 mb-1 lg:hidden">
+                  Owner ERP Portal
+                </p>
+                <div className="flex items-center gap-2.5">
+                  <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white font-headers leading-tight">
+                    <span className="lg:hidden">Manage Your<br />Study Space, Effortlessly</span>
+                    <span className="hidden lg:inline">Owner ERP Portal</span>
+                  </h1>
+                  <span className="hidden lg:inline px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                    ✓ Approved &amp; Live
+                  </span>
+                </div>
+              </div>
+            </div>
+            {/* Mobile approved badge */}
+            <span className="lg:hidden inline-flex items-center gap-1.5 mt-2 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/></svg>
+              Approved &amp; Live
+            </span>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5">
               Manage your verified study space, live desk grid, student CRM, and daily collections.
             </p>
           </div>
@@ -4078,92 +4261,155 @@ export default function OwnerPortalPage() {
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex flex-wrap border-b border-slate-200 dark:border-slate-800 mb-8 gap-2">
-          <button
-            onClick={() => setActiveTab('fees')}
-            className={`py-3 px-4 text-xs font-bold border-b-2 transition flex items-center gap-1.5 ${
-              activeTab === 'fees'
-                ? 'border-violet-600 text-violet-600 dark:text-violet-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-            }`}
-          >
-            <span>💳 Student Fees &amp; Billing</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('onboarding')}
-            className={`py-3 px-4 text-xs font-bold border-b-2 transition ${
-              activeTab === 'onboarding'
-                ? 'border-violet-600 text-violet-600 dark:text-violet-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-            }`}
-          >
-            🗺️ Seat Layout &amp; Blueprint
-          </button>
-
-          <button
-            onClick={() => setActiveTab('scanner')}
-            className={`py-3 px-4 text-xs font-bold border-b-2 transition ${
-              activeTab === 'scanner'
-                ? 'border-violet-600 text-violet-600 dark:text-violet-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-            }`}
-          >
-            🔍 Gate Scanner / Check-in
-          </button>
-
-          <button
-            onClick={() => setActiveTab('walkin')}
-            className={`py-3 px-4 text-xs font-bold border-b-2 transition flex items-center gap-1.5 ${
-              activeTab === 'walkin'
-                ? 'border-violet-600 text-violet-600 dark:text-violet-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-            }`}
-          >
-            <span>🚪 Walk IN</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('complaints')}
-            className={`py-3 px-4 text-xs font-bold border-b-2 transition flex items-center gap-1.5 ${
-              activeTab === 'complaints'
-                ? 'border-violet-600 text-violet-600 dark:text-violet-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-            }`}
-          >
-            <span>📢 Complaints Desk</span>
-            {libraryComplaints.filter(c => c.status !== 'RESOLVED').length > 0 && (
-              <span className="px-1.5 py-0.5 text-[9px] rounded-full bg-rose-500 text-white font-extrabold">
-                {libraryComplaints.filter(c => c.status !== 'RESOLVED').length}
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('master-audit')}
-            className={`py-3 px-4 text-xs font-bold border-b-2 transition ${
-              activeTab === 'master-audit'
-                ? 'border-violet-600 text-violet-600 dark:text-violet-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-            }`}
-          >
-            📜 Master Audit Report
-          </button>
-
-          {library?.libraryCategory !== 'INSTITUTE' && (
+        {/* Mobile / Tablet: 2-column Card Grid Navigation */}
+        <div className="lg:hidden mb-6">
+          <div className="grid grid-cols-2 gap-3">
+            {/* Student Fees & Billing */}
             <button
-              onClick={() => setActiveTab('circulation')}
-              className={`py-3 px-4 text-xs font-bold border-b-2 transition ${
-                activeTab === 'circulation'
-                  ? 'border-violet-600 text-violet-600 dark:text-violet-400'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
+              onClick={() => setActiveTab('fees')}
+              className={`flex items-center gap-3 p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                activeTab === 'fees'
+                  ? 'bg-violet-50 dark:bg-violet-950/40 border-violet-400/50 ring-2 ring-violet-400/30'
+                  : 'bg-white dark:bg-[#0f1623] border-slate-200 dark:border-slate-800 hover:border-violet-300 dark:hover:border-violet-700'
               }`}
             >
-              📚 Book Catalog
+              <div className="shrink-0 w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center">
+                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-extrabold text-slate-900 dark:text-white leading-tight">Student Fees &amp; Billing</p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 leading-tight">Collect &amp; track payments</p>
+              </div>
+              <svg className="w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
             </button>
-          )}
+
+            {/* Seat Layout & Blueprint */}
+            <button
+              onClick={() => setActiveTab('onboarding')}
+              className={`flex items-center gap-3 p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                activeTab === 'onboarding'
+                  ? 'bg-violet-50 dark:bg-violet-950/40 border-violet-400/50 ring-2 ring-violet-400/30'
+                  : 'bg-white dark:bg-[#0f1623] border-slate-200 dark:border-slate-800 hover:border-violet-300 dark:hover:border-violet-700'
+              }`}
+            >
+              <div className="shrink-0 w-9 h-9 rounded-xl bg-teal-100 dark:bg-teal-900/40 flex items-center justify-center">
+                <svg className="w-5 h-5 text-teal-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-extrabold text-slate-900 dark:text-white leading-tight">Seat Layout &amp; Blueprint</p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 leading-tight">Design and manage</p>
+              </div>
+              <svg className="w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+            </button>
+
+            {/* Gate Scanner */}
+            <button
+              onClick={() => setActiveTab('scanner')}
+              className={`flex items-center gap-3 p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                activeTab === 'scanner'
+                  ? 'bg-violet-50 dark:bg-violet-950/40 border-violet-400/50 ring-2 ring-violet-400/30'
+                  : 'bg-white dark:bg-[#0f1623] border-slate-200 dark:border-slate-800 hover:border-violet-300 dark:hover:border-violet-700'
+              }`}
+            >
+              <div className="shrink-0 w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-extrabold text-slate-900 dark:text-white leading-tight">Gate Scanner / Check-in</p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 leading-tight">Scan and log entries</p>
+              </div>
+              <svg className="w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+            </button>
+
+            {/* Walk IN */}
+            <button
+              onClick={() => setActiveTab('walkin')}
+              className={`flex items-center gap-3 p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                activeTab === 'walkin'
+                  ? 'bg-violet-50 dark:bg-violet-950/40 border-violet-400/50 ring-2 ring-violet-400/30'
+                  : 'bg-white dark:bg-[#0f1623] border-slate-200 dark:border-slate-800 hover:border-violet-300 dark:hover:border-violet-700'
+              }`}
+            >
+              <div className="shrink-0 w-9 h-9 rounded-xl bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center">
+                <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-extrabold text-slate-900 dark:text-white leading-tight">Walk IN</p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 leading-tight">Quick student check-in</p>
+              </div>
+              <svg className="w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+            </button>
+
+            {/* Complaints Desk */}
+            <button
+              onClick={() => setActiveTab('complaints')}
+              className={`flex items-center gap-3 p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                activeTab === 'complaints'
+                  ? 'bg-violet-50 dark:bg-violet-950/40 border-violet-400/50 ring-2 ring-violet-400/30'
+                  : 'bg-white dark:bg-[#0f1623] border-slate-200 dark:border-slate-800 hover:border-violet-300 dark:hover:border-violet-700'
+              }`}
+            >
+              <div className="shrink-0 w-9 h-9 rounded-xl bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center">
+                <svg className="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-extrabold text-slate-900 dark:text-white leading-tight flex items-center gap-1.5">
+                  Complaints Desk
+                  {libraryComplaints.filter(c => c.status !== 'RESOLVED').length > 0 && (
+                    <span className="px-1.5 py-0.5 text-[9px] rounded-full bg-rose-500 text-white font-extrabold leading-none">
+                      {libraryComplaints.filter(c => c.status !== 'RESOLVED').length}
+                    </span>
+                  )}
+                </p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 leading-tight">Track and resolve</p>
+              </div>
+              <svg className="w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+            </button>
+
+            {/* Master Audit Report */}
+            <button
+              onClick={() => setActiveTab('master-audit')}
+              className={`flex items-center gap-3 p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                activeTab === 'master-audit'
+                  ? 'bg-violet-50 dark:bg-violet-950/40 border-violet-400/50 ring-2 ring-violet-400/30'
+                  : 'bg-white dark:bg-[#0f1623] border-slate-200 dark:border-slate-800 hover:border-violet-300 dark:hover:border-violet-700'
+              }`}
+            >
+              <div className="shrink-0 w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+                <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-extrabold text-slate-900 dark:text-white leading-tight">Master Audit Report</p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 leading-tight">View detailed reports</p>
+              </div>
+              <svg className="w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+            </button>
+
+            {/* Book Catalog – only for non-Institute libraries */}
+            {library?.libraryCategory !== 'INSTITUTE' && (
+              <button
+                onClick={() => setActiveTab('circulation')}
+                className={`flex items-center gap-3 p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                  activeTab === 'circulation'
+                    ? 'bg-violet-50 dark:bg-violet-950/40 border-violet-400/50 ring-2 ring-violet-400/30'
+                    : 'bg-white dark:bg-[#0f1623] border-slate-200 dark:border-slate-800 hover:border-violet-300 dark:hover:border-violet-700'
+                }`}
+              >
+                <div className="shrink-0 w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
+                  <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] font-extrabold text-slate-900 dark:text-white leading-tight">Book Catalog</p>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 leading-tight">Manage library resources</p>
+                </div>
+                <svg className="w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+              </button>
+            )}
+          </div>
         </div>
+
+
+        {/* Desktop Tab Navigation removed as it's now handled by the Sidebar */}
 
         {/* TAB 1: MY LIBRARY & SEAT LAYOUT (MATCHING SCREENSHOT 2) */}
         {activeTab === 'onboarding' && (
@@ -6704,7 +6950,7 @@ export default function OwnerPortalPage() {
                   </span>
                 </div>
 
-                <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-2xl">
+                <div className="hidden md:block overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-2xl">
                   <table className="w-full text-xs text-left">
                     <thead className="bg-slate-50 dark:bg-slate-800/60 font-bold text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800">
                       <tr>
@@ -6744,6 +6990,37 @@ export default function OwnerPortalPage() {
                     </tbody>
                   </table>
                 </div>
+
+                <div className="block md:hidden space-y-3">
+                  {(masterAuditRoster.length > 0 ? masterAuditRoster : preRegList).length === 0 ? (
+                    <div className="p-6 text-center text-slate-400 font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl">
+                      No active student bookings found for today.
+                    </div>
+                  ) : (
+                    (masterAuditRoster.length > 0 ? masterAuditRoster : preRegList).map((r: any, idx: number) => (
+                      <div key={r.id || idx} className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col gap-2">
+                        <div className="flex justify-between items-center">
+                          <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                            PASS-{r.id_number || r.collegeIdNumber || (7100 + idx)}
+                          </span>
+                          <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-extrabold text-[10px]">
+                            ACTIVE
+                          </span>
+                        </div>
+                        <div className="text-sm font-bold text-slate-900 dark:text-white">
+                          Desk Row A - Seat {r.assigned_desk_code || r.deskCode || (idx + 1)}
+                        </div>
+                        <div className="text-xs text-slate-600 dark:text-slate-400">
+                          Full Day Access (06:00 AM - 10:00 PM)
+                        </div>
+                        <div className="flex justify-between items-center text-xs text-slate-500 pt-2 border-t border-slate-100 dark:border-slate-800">
+                          <span>{r.created_at ? new Date(r.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Today'}</span>
+                          <span className="font-mono font-bold">₹0 (INSTITUTE FREE)</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
 
               {/* 2. STUDENT FEE & BILLING / ROSTER AUDIT SECTION */}
@@ -6768,7 +7045,7 @@ export default function OwnerPortalPage() {
                   </div>
                 </div>
 
-                <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-2xl">
+                <div className="hidden md:block overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-2xl">
                   <table className="w-full text-xs text-left">
                     <thead className="bg-slate-50 dark:bg-slate-800/60 font-bold text-slate-700 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800">
                       {library?.libraryCategory === 'INSTITUTE' ? (

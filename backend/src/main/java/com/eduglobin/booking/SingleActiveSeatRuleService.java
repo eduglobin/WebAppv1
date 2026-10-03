@@ -29,28 +29,11 @@ public class SingleActiveSeatRuleService {
     public void enforce(UUID studentId, UUID libraryId, UUID requestingSeatId) {
         if (studentId == null || libraryId == null) return;
 
-        // 1. Check if the library is an INSTITUTE category library
-        List<Map<String, Object>> libCategoryList = jdbcTemplate.query(
-                "SELECT COALESCE(library_category, 'PRIVATE') AS category FROM libraries WHERE id = :libraryId",
-                new MapSqlParameterSource("libraryId", libraryId),
-                (rs, rowNum) -> Map.of("category", rs.getString("category"))
-        );
-
-        if (libCategoryList.isEmpty()) return;
-        String category = (String) libCategoryList.get(0).get("category");
-
-        if (!"INSTITUTE".equalsIgnoreCase(category)) {
-            // Rule applies to INSTITUTE category libraries only
-            return;
-        }
-
-        // 2. Query active seat bookings (LOCKED, BOOKED, IN_USE)
+        // 1. Query active seat bookings (LOCKED, BOOKED, IN_USE)
         StringBuilder sql = new StringBuilder(
                 "SELECT COUNT(*) FROM bookings b " +
-                "JOIN libraries l ON b.library_id = l.id " +
                 "WHERE b.student_id = :studentId " +
-                "AND b.status IN ('LOCKED', 'BOOKED', 'IN_USE') " +
-                "AND COALESCE(l.library_category, 'PRIVATE') = 'INSTITUTE'"
+                "AND b.status IN ('LOCKED', 'BOOKED', 'IN_USE') "
         );
 
         MapSqlParameterSource params = new MapSqlParameterSource("studentId", studentId);
@@ -70,7 +53,7 @@ public class SingleActiveSeatRuleService {
 
         if (activeCount != null && activeCount > 0) {
             throw new EduGlobinException(
-                    "You already have an active seat at this institute. Vacate or extend your current session before booking another."
+                    "You already have an active seat at this library. Vacate or extend your current session before booking another."
             );
         }
     }

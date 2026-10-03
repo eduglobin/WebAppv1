@@ -85,7 +85,7 @@ export default function LandingPage() {
   const isAdmin = userRole === 'SUPER_ADMIN' || userRole === 'STAFF';
 
   return (
-    <div className="min-h-screen bg-[#f6f8fc] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#eef2f9] via-white to-[#f6f8fc] dark:bg-slate-950 dark:from-indigo-950 dark:via-slate-950 dark:to-slate-950 text-slate-800 dark:text-slate-100 flex flex-col relative overflow-hidden transition-colors duration-300">
+    <div className="min-h-screen bg-[#f6f8fc] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#eef2f9] via-white to-[#f6f8fc] dark:bg-slate-950 dark:from-indigo-950 dark:via-slate-950 dark:to-slate-950 text-slate-800 dark:text-slate-100 flex flex-col relative overflow-hidden transition-colors duration-300 animate-fade-in backdrop-blur-lg">
       <Navbar />
 
       {/* Decorative Blur Blobs */}
@@ -96,7 +96,7 @@ export default function LandingPage() {
       <header className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-24 text-center">
         {/* Brand Logo & Two-tone text */}
         <div className="flex flex-col items-center justify-center mb-8">
-          <img src="/logov1.png" alt="EduGlobin Logo" className="h-28 md:h-36 w-auto object-contain mb-3 select-none pointer-events-none" />
+          <img src="/logov1.png" alt="EduGlobin Logo" className="h-28 md:h-36 w-28 md:w-36 object-cover rounded-full mb-3 select-none pointer-events-none" />
           <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight transition-colors select-none flex items-center justify-center">
             <span className="text-[#032b85] dark:text-white">Edu</span>
             <span className="text-[#0f62fe] dark:text-[#00b4ff]">Globin</span>
@@ -116,10 +116,10 @@ export default function LandingPage() {
             to={userRole === 'SUPER_ADMIN' || userRole === 'STAFF' ? '/admin-portal' : userRole === 'LIBRARY_OWNER' ? '/owner/portal' : userRole === 'STUDENT' ? '/dashboard' : '/get-started'}
             id="hero-cta"
             className="inline-flex items-center gap-2.5 px-10 py-4 rounded-2xl
-              bg-[#0f62fe] hover:bg-[#0353e9]
+              bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 hover:from-violet-500 hover:via-indigo-500 hover:to-blue-500
               text-white font-bold text-lg
-              shadow-lg shadow-[#0f62fe]/30
-              hover:shadow-xl hover:shadow-[#0f62fe]/40
+              shadow-lg shadow-violet-600/30
+              hover:shadow-xl hover:shadow-violet-600/40
               hover:-translate-y-0.5
               transition-all duration-200 cursor-pointer select-none"
           >

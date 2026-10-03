@@ -49,6 +49,9 @@ public class CheckoutRequest {
     private String collegeName;
     private java.util.Map<String, Object> customFields;
 
+    // Payment mode: ONLINE, CASH, FREE, etc. (optional — defaults to ONLINE)
+    private String paymentMode;
+
     // Getters and Setters
 
     public String getFullName() { return fullName; }
@@ -71,6 +74,9 @@ public class CheckoutRequest {
 
     public java.util.Map<String, Object> getCustomFields() { return customFields; }
     public void setCustomFields(java.util.Map<String, Object> customFields) { this.customFields = customFields; }
+
+    public String getPaymentMode() { return paymentMode; }
+    public void setPaymentMode(String paymentMode) { this.paymentMode = paymentMode; }
 
     public String getStudentGender() { return studentGender; }
     public void setStudentGender(String studentGender) { this.studentGender = studentGender; }

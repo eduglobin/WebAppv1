@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { QRCodeCanvas } from 'qrcode.react';
 import { api } from '../lib/api';
+import { useTranslation } from 'react-i18next';
 import Navbar from '../components/Navbar';
+import StudentSidebar from '../components/StudentSidebar';
 
 interface StudentBooking {
   id: string;
@@ -43,12 +45,14 @@ interface WalletTx {
 }
 
 export default function StudentDashboardPage() {
+  const { i18n } = useTranslation();
+  const isHi = i18n.language?.startsWith('hi');
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<'bookings' | 'passes' | 'wallet' | 'books' | 'libraries' | 'privacy'>('bookings');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'passes' | 'wallet' | 'books' | 'libraries' | 'privacy'>('dashboard');
 
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['bookings', 'passes', 'wallet', 'books', 'libraries', 'privacy'].includes(tab)) {
+    if (tab && ['dashboard', 'bookings', 'passes', 'wallet', 'books', 'libraries', 'privacy'].includes(tab)) {
       setActiveTab(tab as any);
     }
   }, [searchParams]);
@@ -397,265 +401,412 @@ export default function StudentDashboardPage() {
   const pastBookings = bookings.filter(b => b.status === 'COMPLETED' || ((b.status === 'BOOKED' || b.status === 'IN_USE') && new Date(b.valid_until) < new Date()));
   const cancelledBookings = bookings.filter(b => b.status === 'CANCELLED');
 
+  // ── Sidebar open/close state
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // ── Near-me library search state
+  const [nearbyLibraries, setNearbyLibraries] = useState<any[]>([]);
+  const [nearbyLoading, setNearbyLoading] = useState(false);
+  const [searchCity, setSearchCity] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [locationGranted, setLocationGranted] = useState(false);
+
+  const fetchNearby = async (lat?: number, lng?: number, city?: string) => {
+    setNearbyLoading(true);
+    try {
+      const params: any = {};
+      if (lat && lng) { params.lat = lat; params.lng = lng; }
+      else if (city) { params.city = city; }
+      const { data } = await api.get('/api/v1/libraries/search', { params });
+      if (data?.data?.libraries) setNearbyLibraries(data.data.libraries.slice(0, 8));
+      else if (Array.isArray(data?.data)) setNearbyLibraries(data.data.slice(0, 8));
+    } catch { setNearbyLibraries(allLibraries.slice(0, 8)); }
+    finally { setNearbyLoading(false); }
+  };
+
+  // On mount: try GPS, fall back to registered city
+  useEffect(() => {
+    if (allLibraries.length > 0 && nearbyLibraries.length === 0) {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            setLocationGranted(true);
+            fetchNearby(pos.coords.latitude, pos.coords.longitude);
+          },
+          () => {
+            // GPS denied – show all libs
+            setNearbyLibraries(allLibraries.slice(0, 8));
+          },
+          { timeout: 4000 }
+        );
+      } else {
+        setNearbyLibraries(allLibraries.slice(0, 8));
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allLibraries]);
+
+  const handleUseLocation = () => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocationGranted(true);
+        fetchNearby(pos.coords.latitude, pos.coords.longitude);
+      },
+      () => alert('Location access denied. Please enable it from browser settings.')
+    );
+  };
+
+  const navigate = useNavigate();
+  const handleSearch = () => {
+    if (searchQuery.trim() || searchCity.trim()) {
+      const q = searchQuery.trim() || searchCity.trim();
+      navigate(`/search?q=${encodeURIComponent(q)}`);
+    } else {
+      navigate('/search');
+    }
+  };
+
+  const greeting = () => {
+    const h = new Date().getHours();
+    if (isHi) {
+      if (h < 12) return 'शुभ प्रभात';
+      if (h < 17) return 'शुभ दोपहर';
+      return 'शुभ संध्या';
+    }
+    if (h < 12) return 'Good Morning';
+    if (h < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  };
+
   return (
-    <div className="min-h-screen bg-[#f6f8fc] dark:bg-slate-950 text-slate-800 dark:text-slate-100 flex flex-col transition-colors duration-300">
-      <Navbar />
+    <div className="min-h-screen bg-[#f6f8fc] dark:bg-[#07090f] text-slate-800 dark:text-slate-100 flex flex-col transition-colors duration-300">
+      <Navbar onToggleSidebar={() => setSidebarOpen(prev => !prev)} />
 
-      <main className="flex-1 max-w-[1500px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header with Total Study Hours Tracker */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold font-headers text-slate-900 dark:text-white">
-              Student Dashboard
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Manage your study reservations, active passes, and wallet balance
-            </p>
-          </div>
+      <div className="flex flex-1 overflow-hidden">
+        <StudentSidebar activeItemId={activeTab} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full md:w-auto">
-              <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-2.5">
-                <span className="text-xl">📚</span>
-                <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">Hours Studied</span>
-                  <span className="text-sm font-black text-slate-900 dark:text-white font-mono">{studentStats?.hoursStudied ?? totalHoursStudied}h</span>
-                </div>
+        {/* ── MAIN CONTENT ── */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+            {/* ── HERO BANNER ── */}
+            <div className="relative rounded-3xl bg-gradient-to-br from-[#1a1060] via-[#2d1b8e] to-[#0f0c2e] text-white p-6 overflow-hidden shadow-xl">
+              <div className="absolute -top-8 -right-8 w-40 h-40 bg-violet-400/10 rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute bottom-0 right-16 pointer-events-none opacity-80 hidden sm:block">
+                <svg width="120" height="110" viewBox="0 0 120 110" fill="none">
+                  <ellipse cx="60" cy="95" rx="55" ry="12" fill="#7c3aed" opacity="0.18"/>
+                  <rect x="30" y="40" width="60" height="45" rx="8" fill="#6d28d9" opacity="0.7"/>
+                  <rect x="38" y="32" width="44" height="12" rx="4" fill="#8b5cf6"/>
+                  <circle cx="60" cy="28" r="12" fill="#a78bfa"/>
+                  <rect x="50" y="50" width="20" height="6" rx="2" fill="#ede9fe" opacity="0.6"/>
+                  <rect x="46" y="60" width="28" height="4" rx="2" fill="#ede9fe" opacity="0.4"/>
+                </svg>
               </div>
-              <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-2.5">
-                <span className="text-xl">🪙</span>
-                <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">Coins Balance</span>
-                  <span className="text-sm font-black text-amber-500 font-mono">₹{studentStats?.coinsBalance ?? wallet?.balance ?? 0}</span>
-                </div>
-              </div>
-              <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-2.5">
-                <span className="text-xl">🔥</span>
-                <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">Study Streak</span>
-                  <span className="text-sm font-black text-orange-500 font-mono">{studentStats?.currentStreak ?? 1} Days</span>
-                </div>
-              </div>
-              <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-2.5">
-                <span className="text-xl">🏛️</span>
-                <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block">Libraries Used</span>
-                  <span className="text-sm font-black text-violet-500 font-mono">{studentStats?.librariesCount ?? 1}</span>
+              <div className="relative z-10 max-w-xs">
+                <p className="text-xs font-semibold text-violet-300 mb-1">{greeting()}</p>
+                <h1 className="text-2xl sm:text-3xl font-black leading-tight mb-2">
+                  {isHi ? <>सीखते रहो,<br />बढ़ते रहो! 🚀</> : <>Keep Learning,<br />Keep Growing! 🚀</>}
+                </h1>
+                <p className="text-sm text-violet-200 opacity-80">Find and book the best study spaces near you. Stay consistent, achieve more.</p>
+                <div className="mt-3 inline-block px-3 py-1.5 rounded-lg bg-white/10 border border-white/20 text-xs font-bold text-white">
+                  Better Students · Brighter Futures
                 </div>
               </div>
             </div>
 
-            <Link
-              to="/search"
-              className="px-5 py-3 rounded-2xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition shadow-md shadow-violet-500/20"
-            >
-              + Book a New Seat
-            </Link>
-          </div>
-        </div>
+            {/* ── STATS ROW ── */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { icon: '📚', label: isHi ? 'अध्ययन घंटे' : 'Hours Studied', sub: 'Hours Studied This Week', value: `${studentStats?.hoursStudied ?? 0}h`, color: 'text-blue-600 dark:text-blue-400' },
+                { icon: '💰', label: isHi ? 'वॉलेट बैलेंस' : 'Wallet Balance', sub: 'Wallet Balance', value: `₹${wallet?.balance ?? 0}`, color: 'text-emerald-600 dark:text-emerald-400', extra: isHi ? 'पैसे जोड़ें →' : 'Add Funds →' },
+                { icon: '📋', label: isHi ? 'एक्टिव पास' : 'Active Passes', sub: 'Active Passes', value: `${upcomingBookings.length}`, color: 'text-violet-600 dark:text-violet-400', extra: isHi ? 'पास देखें →' : 'View Passes →' },
+                { icon: '🔥', label: isHi ? 'स्टडी स्ट्रीक' : 'Study Streak', sub: 'Study Streak', value: `${studentStats?.currentStreak ?? 1} Day${(studentStats?.currentStreak ?? 1) > 1 ? 's' : ''}`, color: 'text-orange-500', extra: isHi ? 'जारी रखें!' : 'Keep it up!' },
+              ].map((stat, i) => (
+                <div key={i} className="p-4 rounded-2xl bg-white dark:bg-[#12192e] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col gap-1">
+                  <span className="text-2xl">{stat.icon}</span>
+                  <span className={`text-xl font-black ${stat.color}`}>{stat.value}</span>
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">{stat.label}</span>
+                  {stat.extra && <span className="text-[10px] text-violet-500 dark:text-violet-400 font-semibold">{stat.extra}</span>}
+                </div>
+              ))}
+            </div>
 
-        {/* Owner Vacate Request Banner */}
-        {pendingVacateRequests.length > 0 && (
-          <div className="mb-6 p-4 rounded-2xl bg-rose-500/10 border-2 border-rose-500/30 text-slate-900 dark:text-white space-y-2 shadow-md">
-            {pendingVacateRequests.map(req => (
-              <div key={req.request_id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            {/* ── FIND YOUR STUDY SPACE ── */}
+            <div className="bg-white dark:bg-[#12192e] rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <div>
-                  <span className="px-2.5 py-0.5 text-xxs font-extrabold rounded-full bg-rose-600 text-white uppercase tracking-wider">
-                    ⚠️ Owner Vacate Request
-                  </span>
-                  <p className="text-xs font-bold mt-1">
-                    {req.library_name} requests you to vacate Seat {req.seat_code}.
-                  </p>
-                  <p className="text-xxs text-slate-500">Expires at {new Date(req.expires_at).toLocaleTimeString()}</p>
+                  <h2 className="text-base font-black text-slate-900 dark:text-white">{isHi ? 'अपनी Study Space खोजें' : 'Find Your Study Space'}</h2>
+                  <p className="text-xs text-slate-400">{isHi ? 'शहर, इलाका, या लाइब्रेरी का नाम खोजें' : 'Search by city, locality, or library name'}</p>
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleRespondVacateRequest(req.request_id, 'ACCEPT')}
-                    className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-sm cursor-pointer"
+                <button
+                  onClick={handleUseLocation}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 text-xs font-bold border border-violet-200 dark:border-violet-800 hover:bg-violet-100 transition cursor-pointer"
+                >
+                  📍 {locationGranted ? 'Location ON ✓' : 'Current Location'}
+                </button>
+              </div>
+
+              <div className="flex gap-2">
+                <div className="relative">
+                  <select
+                    value={searchCity}
+                    onChange={e => setSearchCity(e.target.value)}
+                    className="appearance-none h-11 pl-8 pr-8 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#0c1220] text-sm font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-violet-500 min-w-[140px]"
                   >
-                    ✓ Accept &amp; Leave
-                  </button>
-                  <button
-                    onClick={() => handleRespondVacateRequest(req.request_id, 'DECLINE')}
-                    className="px-3.5 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition cursor-pointer"
-                  >
-                    ✕ Decline
-                  </button>
+                    <option value="">{isHi ? '🏙️ शहर चुनें' : '🏙️ Select City'}</option>
+                    {['Indore', 'Bhopal', 'Bhilai', 'Raipur', 'Jabalpur', 'Gwalior', 'Ujjain'].map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                  <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">▼</span>
+                </div>
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+                  <input
+                    type="text"
+                    placeholder={isHi ? 'इलाका, लाइब्रेरी नाम, या परीक्षा (UPSC)...' : 'Locality, library name, or exam (UPSC)...'}
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                    className="w-full h-11 pl-9 pr-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#0c1220] text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:border-violet-500"
+                  />
                 </div>
               </div>
-            ))}
-          </div>
-        )}
 
-        {/* Reserved Monthly Pass Card (Module 66 - Monthly Member Dashboard) */}
-        {reservedPass && (
-          <div className="mb-8 p-6 rounded-3xl bg-gradient-to-r from-emerald-950/80 via-slate-900 to-emerald-900 border border-emerald-500/40 text-white shadow-xl relative overflow-hidden">
-            <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+              <button
+                onClick={handleSearch}
+                className="w-full py-3 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-black text-sm shadow-lg shadow-violet-500/25 transition cursor-pointer"
+              >
+                🔍 {isHi ? 'खोजें / Search' : 'Search Libraries'}
+              </button>
+
+              {/* Quick filters */}
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-500 text-slate-950 uppercase tracking-wider">
-                    🔒 Dedicated Monthly Pass
-                  </span>
-                  {reservedPass.subscription_status === 'GRACE' ? (
-                    <span className="px-3 py-1 rounded-full text-xs font-black bg-amber-500 text-slate-950 uppercase tracking-wider">
-                      ⚠️ Grace Period
-                    </span>
-                  ) : (
-                    <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">
-                      ACTIVE MEMBER
-                    </span>
-                  )}
-                </div>
-                <h2 className="text-2xl font-black tracking-tight">{reservedPass.library_name}</h2>
-                <p className="text-sm text-emerald-200/80 font-medium mt-0.5">{reservedPass.library_address}</p>
-                <div className="flex items-center gap-4 mt-4 text-xs font-semibold">
-                  <span className="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
-                    Seat: <strong className="text-emerald-400 font-mono text-sm">{reservedPass.seat_code}</strong>
-                  </span>
-                  <span className="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
-                    Period End: <strong className="text-slate-200">{new Date(reservedPass.current_period_end).toLocaleDateString()}</strong>
-                  </span>
+                <p className="text-xs font-bold text-slate-500 mb-2">Quick Filters</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { icon: '📍', label: isHi ? 'सबसे पास' : 'Nearest First', en: 'Nearest First' },
+                    { icon: '📈', label: isHi ? 'लोकप्रिय' : 'Popular Areas', en: 'Popular Areas' },
+                    { icon: '🎯', label: 'UPSC Focus', en: 'UPSC Focus' },
+                    { icon: '❄️', label: isHi ? 'AC Space' : 'AC Spaces', en: 'AC Spaces' },
+                    { icon: '💰', label: isHi ? 'Budget' : 'Budget Friendly', en: 'Budget Friendly' },
+                  ].map(f => (
+                    <button
+                      key={f.en}
+                      onClick={() => { setSearchQuery(f.en); fetchNearby(undefined, undefined, f.en); }}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold border border-slate-200 dark:border-slate-700 hover:bg-violet-50 hover:border-violet-300 dark:hover:bg-violet-900/30 transition cursor-pointer"
+                    >
+                      {f.icon} {f.label}
+                    </button>
+                  ))}
                 </div>
               </div>
+            </div>
 
-              <div className="flex flex-col items-end gap-3 w-full md:w-auto">
-                <div className="text-right">
-                  <span className="text-xxs uppercase tracking-wider text-emerald-300 font-bold block mb-1">
-                    Today's Attendance Status
-                  </span>
-                  {reservedPass.is_checked_in_today ? (
-                    <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-emerald-600 text-white font-extrabold text-sm shadow-md">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-200 animate-pulse" />
-                      🟢 Checked In &amp; Present Today
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-emerald-200 text-emerald-900 font-bold text-sm shadow-sm">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
-                      🟢 Active Subscription — Not Checked In
-                    </span>
-                  )}
+            {/* ── MY BOOKINGS + ACTIVE PASSES QUICK CARDS ── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* My Bookings */}
+              <div className="bg-white dark:bg-[#12192e] rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">📅</span>
+                    <span className="font-black text-slate-900 dark:text-white text-sm">{isHi ? 'मेरी बुकिंग' : 'My Bookings'}</span>
+                  </div>
+                  <button onClick={() => setActiveTab('bookings')} className="text-xs font-bold text-violet-600 dark:text-violet-400 hover:underline">{isHi ? 'सब देखें →' : 'View All →'}</button>
                 </div>
+                {upcomingBookings.length === 0 ? (
+                  <div className="flex flex-col items-center gap-2 py-6 text-center">
+                    <span className="text-4xl">📅</span>
+                    <p className="text-sm font-bold text-slate-600 dark:text-slate-400">{isHi ? 'कोई बुकिंग नहीं' : 'No Active Bookings'}</p>
+                    <p className="text-xs text-slate-400">No upcoming bookings. Search and book a study space to get started.</p>
+                    <Link to="/search" className="mt-2 px-5 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs shadow transition">
+                      🔍 {isHi ? 'लाइब्रेरी खोजें' : 'Search Libraries'}
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {upcomingBookings.slice(0,2).map(b => (
+                      <div key={b.id} className="p-3 rounded-xl bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 text-xs">
+                        <p className="font-bold text-slate-800 dark:text-slate-100">{b.library_name}</p>
+                        <p className="text-slate-500 mt-0.5">Seat {b.seat_code} · {new Date(b.valid_from).toLocaleDateString()}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
-                {reservedPass.is_checked_in_today && (
-                  <button
-                    onClick={handleReservedCheckOut}
-                    className="w-full md:w-auto px-5 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-extrabold border border-amber-500/30 transition shadow-lg cursor-pointer"
-                  >
-                    🚪 Check Out for Today (Self-Service)
-                  </button>
+              {/* Active Passes */}
+              <div className="bg-white dark:bg-[#12192e] rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">⚡</span>
+                    <span className="font-black text-slate-900 dark:text-white text-sm">{isHi ? 'एक्टिव पास' : 'Active Passes'}</span>
+                  </div>
+                  <button onClick={() => setActiveTab('passes')} className="text-xs font-bold text-violet-600 dark:text-violet-400 hover:underline">{isHi ? 'सब देखें →' : 'View All →'}</button>
+                </div>
+                {upcomingBookings.filter(b => b.status === 'IN_USE' || b.status === 'BOOKED').length === 0 ? (
+                  <div className="flex flex-col items-center gap-2 py-6 text-center">
+                    <span className="text-4xl">📄</span>
+                    <p className="text-sm font-bold text-slate-600 dark:text-slate-400">{isHi ? 'कोई एक्टिव पास नहीं' : 'No Active Passes'}</p>
+                    <p className="text-xs text-slate-400">No active passes. Get a daily or weekly pass for flexible access.</p>
+                    <Link to="/search" className="mt-2 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow transition">
+                      🎟️ Explore Passes
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {upcomingBookings.filter(b => b.status === 'IN_USE' || b.status === 'BOOKED').slice(0,2).map(b => (
+                      <div key={b.id} className="p-4 flex flex-col items-center gap-3 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-xs">
+                        <div className="w-full flex justify-between items-start">
+                          <div>
+                            <p className="font-bold text-slate-800 dark:text-slate-100 text-sm">{b.library_name}</p>
+                            <p className="text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
+                              {b.status === 'IN_USE' ? '🟢 IN USE' : '🔵 BOOKED'} · Seat {b.seat_code}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-slate-500 text-[10px]">Booking Ref / Token</p>
+                            <p className="font-mono font-bold text-slate-800 dark:text-slate-200 tracking-wider text-sm">{b.booking_reference}</p>
+                          </div>
+                        </div>
+                        <div className="p-2 bg-white rounded-xl shadow-sm mt-2">
+                          <QRCodeCanvas value={b.qr_payload_hash} size={140} level="H" />
+                        </div>
+                        <p className="text-[10px] text-slate-500 text-center uppercase tracking-widest mt-1">Scan at library desk</p>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>
-          </div>
-        )}
 
-        {/* Tabs Navigation */}
-        <div className="flex border-b border-slate-200 dark:border-slate-800 mb-8 overflow-x-auto">
-          <button
-            onClick={() => setActiveTab('bookings')}
-            className={`py-3 px-5 text-sm font-semibold border-b-2 transition-all shrink-0 ${
-              activeTab === 'bookings'
-                ? 'border-violet-600 text-violet-600 dark:text-violet-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-            }`}
-          >
-            My Bookings ({bookings.length})
-          </button>
+            {/* ── RECOMMENDED LIBRARIES NEAR YOU ── */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h2 className="text-base font-black text-slate-900 dark:text-white">
+                    {isHi
+                      ? (locationGranted ? '📍 आपके पास की लाइब्रेरी' : '🏛️ अनुशंसित लाइब्रेरी')
+                      : (locationGranted ? '📍 Libraries Near You' : '🏛️ Recommended Libraries')}
+                  </h2>
+                  <p className="text-xs text-slate-400">
+                    {locationGranted ? 'Based on your GPS location' : 'Based on your preferences and location'}
+                  </p>
+                </div>
+                <Link to="/search" className="text-xs font-bold text-violet-600 dark:text-violet-400 hover:underline">{isHi ? 'सब देखें →' : 'View All →'}</Link>
+              </div>
 
-          <button
-            onClick={() => setActiveTab('libraries')}
-            className={`py-3 px-5 text-sm font-semibold border-b-2 transition-all shrink-0 ${
-              activeTab === 'libraries'
-                ? 'border-violet-600 text-violet-600 dark:text-violet-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-            }`}
-          >
-            My Libraries &amp; Seats ({Array.from(new Set(bookings.map(b => b.library_name))).filter(Boolean).length})
-          </button>
+              {nearbyLoading ? (
+                <div className="flex gap-3 overflow-x-auto pb-2">
+                  {[1,2,3,4].map(i => (
+                    <div key={i} className="shrink-0 w-44 rounded-2xl bg-slate-200 dark:bg-slate-800 h-52 animate-pulse" />
+                  ))}
+                </div>
+              ) : nearbyLibraries.length === 0 ? (
+                <div className="p-6 rounded-2xl bg-white dark:bg-[#12192e] border border-slate-200 dark:border-slate-800 text-center">
+                  <p className="text-sm text-slate-500">कोई लाइब्रेरी नहीं मिली। शहर बदलकर खोजें।</p>
+                </div>
+              ) : (
+                <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x">
+                  {nearbyLibraries.map((lib: any) => (
+                    <Link
+                      key={lib.id}
+                      to={`/library/${lib.id}`}
+                      className="shrink-0 w-44 snap-start rounded-2xl bg-white dark:bg-[#12192e] border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
+                    >
+                      <div className="h-28 bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                        <img
+                          src={lib.coverUrl || lib.cover_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(lib.name)}&background=7c3aed&color=fff&size=176&bold=true`}
+                          alt={lib.name}
+                          className="w-full h-full object-cover"
+                          onError={e => { (e.target as any).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(lib.name || 'L')}&background=7c3aed&color=fff&size=176&bold=true`; }}
+                        />
+                      </div>
+                      <div className="p-3">
+                        <p className="font-bold text-slate-900 dark:text-white text-xs leading-tight truncate">{lib.name}</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-0.5 truncate">
+                          <span>📍</span> {[lib.locality, lib.city].filter(Boolean).join(', ') || lib.city || 'India'}
+                        </p>
+                        <div className="flex items-center justify-between mt-1.5">
+                          <span className="text-[10px] font-semibold text-slate-500">{lib.totalSeats || lib.total_seats || '—'} seats</span>
+                          <span className="flex items-center gap-0.5 text-[10px] font-bold text-amber-500">⭐ {lib.rating || '4.5'}</span>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
 
-          <button
-            onClick={() => setActiveTab('passes')}
-            className={`py-3 px-5 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
-              activeTab === 'passes'
-                ? 'border-violet-600 text-violet-600 dark:text-violet-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-            }`}
-          >
-            <span>My Active Passes</span>
-            {upcomingBookings.length > 0 && (
-              <span className="px-2 py-0.5 text-xxs font-bold rounded-full bg-violet-500/15 text-violet-600 dark:text-violet-400">
-                {upcomingBookings.length}
-              </span>
+            {/* ── PENDING VACATE REQUESTS ── */}
+            {pendingVacateRequests.length > 0 && (
+              <div className="p-4 rounded-2xl bg-rose-500/10 border-2 border-rose-500/30 space-y-2 shadow-md">
+                {pendingVacateRequests.map(req => (
+                  <div key={req.request_id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div>
+                      <span className="px-2.5 py-0.5 text-[10px] font-extrabold rounded-full bg-rose-600 text-white uppercase tracking-wider">⚠️ Owner Vacate Request</span>
+                      <p className="text-xs font-bold mt-1 text-slate-900 dark:text-white">{req.library_name} requests you to vacate Seat {req.seat_code}.</p>
+                      <p className="text-[10px] text-slate-500">Expires at {new Date(req.expires_at).toLocaleTimeString()}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => handleRespondVacateRequest(req.request_id, 'ACCEPT')} className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition cursor-pointer">✓ Accept &amp; Leave</button>
+                      <button onClick={() => handleRespondVacateRequest(req.request_id, 'DECLINE')} className="px-3.5 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold transition cursor-pointer">✕ Decline</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
-          </button>
 
-          <button
-            onClick={() => setActiveTab('wallet')}
-            className={`py-3 px-5 text-sm font-semibold border-b-2 transition-all ${
-              activeTab === 'wallet'
-                ? 'border-violet-600 text-violet-600 dark:text-violet-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-            }`}
-          >
-            Wallet & Ledger {wallet ? `(₹${wallet.balance})` : ''}
-          </button>
-
-          <button
-            onClick={() => setActiveTab('books')}
-            className={`py-3 px-5 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
-              activeTab === 'books'
-                ? 'border-violet-600 text-violet-600 dark:text-violet-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-            }`}
-          >
-            <span>My Books</span>
-            {bookLoans.filter(l => l.status === 'ISSUED' || l.status === 'OVERDUE').length > 0 && (
-              <span className="px-2 py-0.5 text-xxs font-bold rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-                {bookLoans.filter(l => l.status === 'ISSUED' || l.status === 'OVERDUE').length}
-              </span>
+            {/* ── RESERVED MONTHLY PASS ── */}
+            {reservedPass && (
+              <div className="p-6 rounded-3xl bg-gradient-to-r from-emerald-950/80 via-slate-900 to-emerald-900 border border-emerald-500/40 text-white shadow-xl relative overflow-hidden">
+                <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-500 text-slate-950 uppercase tracking-wider">🔒 Dedicated Monthly Pass</span>
+                    </div>
+                    <h2 className="text-2xl font-black tracking-tight">{reservedPass.library_name}</h2>
+                    <p className="text-sm text-emerald-200/80 font-medium mt-0.5">{reservedPass.library_address}</p>
+                    <div className="flex items-center gap-4 mt-4 text-xs font-semibold">
+                      <span className="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">Seat: <strong className="text-emerald-400 font-mono text-sm">{reservedPass.seat_code}</strong></span>
+                      <span className="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">Period End: <strong className="text-slate-200">{new Date(reservedPass.current_period_end).toLocaleDateString()}</strong></span>
+                    </div>
+                  </div>
+                  {reservedPass.is_checked_in_today && (
+                    <button onClick={handleReservedCheckOut} className="px-5 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-extrabold border border-amber-500/30 transition cursor-pointer">
+                      🚪 Check Out for Today
+                    </button>
+                  )}
+                </div>
+              </div>
             )}
-          </button>
 
-          <button
-            onClick={() => {
-              setActiveTab('libraries');
-              if (myLibraries.length === 0) {
-                setLibrariesLoading(true);
-                api.get('/api/v1/students/me/my-libraries')
-                  .then((r: any) => setMyLibraries(r.data?.data || []))
-                  .catch(() => {})
-                  .finally(() => setLibrariesLoading(false));
-              }
-            }}
-            className={`py-3 px-5 text-sm font-semibold border-b-2 transition-all flex items-center gap-2 ${
-              activeTab === 'libraries'
-                ? 'border-violet-600 text-violet-600 dark:text-violet-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-            }`}
-          >
-            <span>🏛️ My Libraries</span>
-            {myLibraries.length > 0 && (
-              <span className="px-2 py-0.5 text-xxs font-bold rounded-full bg-teal-500/15 text-teal-600 dark:text-teal-400">
-                {myLibraries.length}
-              </span>
-            )}
-          </button>
+            {/* ── TAB CONTENT AREA ── */}
+            <div className="bg-white dark:bg-[#12192e] rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+              {/* Tab switcher - mobile dropdown */}
+              <div className="p-4 border-b border-slate-100 dark:border-slate-800">
+                <label className="block text-[10px] font-extrabold text-slate-400 mb-2 uppercase tracking-widest">{isHi ? 'डैशबोर्ड सेक्शन चुनें / Select Section' : 'Select Dashboard Section'}</label>
+                <div className="relative">
+                  <select
+                    value={activeTab}
+                    onChange={e => setActiveTab(e.target.value as any)}
+                    className="w-full bg-slate-50 dark:bg-[#0c1220] border-2 border-violet-500/40 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:border-violet-600 appearance-none pr-10 cursor-pointer"
+                  >
+                    <option value="bookings">{isHi ? '📅 मेरी बुकिंग' : '📅 My Bookings'} ({bookings.length})</option>
+                    <option value="libraries">{isHi ? '🏛️ मेरी लाइब्रेरी' : '🏛️ My Libraries & History'} ({Array.from(new Set(bookings.map(b => b.library_name))).filter(Boolean).length})</option>
+                    <option value="passes">{isHi ? '⚡ एक्टिव पास' : '⚡ Active Passes'} ({upcomingBookings.length})</option>
+                    <option value="wallet">{isHi ? '💳 वॉलेट' : '💳 Wallet & Ledger'} {wallet ? `(₹${wallet.balance})` : ''}</option>
+                    <option value="books">{isHi ? '📚 मेरी किताबें' : '📚 My Books'} ({bookLoans.filter(l => l.status === 'ISSUED' || l.status === 'OVERDUE').length})</option>
+                    <option value="privacy">🔐 Privacy &amp; Activity Log</option>
+                  </select>
+                  <div className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">▼</div>
+                </div>
+              </div>
 
-          <button
-            onClick={() => setActiveTab('privacy')}
-            className={`py-3 px-5 text-sm font-semibold border-b-2 transition-all shrink-0 ${
-              activeTab === 'privacy'
-                ? 'border-violet-600 text-violet-600 dark:text-violet-400'
-                : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
-            }`}
-          >
-            🔐 Privacy &amp; Activity Log
-          </button>
-        </div>
-
-        {/* TAB 1: MY BOOKINGS */}
-        {activeTab === 'bookings' && (
+        {/* TAB 1: MY BOOKINGS OR DASHBOARD */}
+        {(activeTab === 'bookings' || activeTab === 'dashboard') && (
           <div className="space-y-8">
             {/* Visitor Pass Requests Section */}
             <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
@@ -824,90 +975,6 @@ export default function StudentDashboardPage() {
                 </div>
               </div>
             )}
-          </div>
-        )}
-
-        {/* TAB: MY LIBRARIES & SEATS HISTORY */}
-        {activeTab === 'libraries' && (
-          <div className="space-y-6">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-sm space-y-4">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white font-headers">
-                    My Libraries &amp; Assigned Seats Directory
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Your institutional &amp; partner library reservations grouped by venue with seat numbers and validity history.
-                  </p>
-                </div>
-
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">
-                  {Array.from(new Set(bookings.map(b => b.library_name))).filter(Boolean).length} Joined Libraries
-                </span>
-              </div>
-
-              {bookings.length === 0 ? (
-                <div className="py-12 text-center text-xs text-slate-400 space-y-2">
-                  <p>You haven't reserved any library seats yet.</p>
-                  <Link to="/search" className="inline-block mt-2 px-4 py-2 rounded-xl bg-violet-600 text-white font-bold text-xs">
-                    Find Nearby Libraries →
-                  </Link>
-                </div>
-              ) : (
-                <div className="grid gap-6">
-                  {Object.entries(
-                    bookings.reduce((acc: any, b) => {
-                      const libName = b.library_name || 'Partner Library';
-                      if (!acc[libName]) acc[libName] = [];
-                      acc[libName].push(b);
-                      return acc;
-                    }, {})
-                  ).map(([libName, libBookings]: [string, any]) => (
-                    <div key={libName} className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50 space-y-4">
-                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
-                        <div className="flex items-center gap-2.5">
-                          <div>
-                            <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">
-                              {libName}
-                            </h4>
-                            <p className="text-[11px] text-slate-500">
-                              {libBookings[0]?.locality || 'City Facility'} · {libBookings[0]?.city || 'Location'}
-                            </p>
-                          </div>
-                        </div>
-
-                        <span className="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-                          {libBookings.length} Total Bookings
-                        </span>
-                      </div>
-
-                      <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
-                        {libBookings.map((b: StudentBooking) => (
-                          <div key={b.id} className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="px-2 py-0.5 rounded font-mono font-black text-xs bg-violet-500/15 text-violet-600 dark:text-violet-400">
-                                Desk {b.seat_code || 'A1'}
-                              </span>
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
-                                b.status === 'BOOKED' || b.status === 'IN_USE' ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
-                              }`}>
-                                {b.status}
-                              </span>
-                            </div>
-                            <div className="text-xs text-slate-600 dark:text-slate-300 font-medium">
-                              Ref: <code className="font-mono font-bold text-slate-900 dark:text-white">{b.booking_reference}</code>
-                            </div>
-                            <div className="text-[11px] text-slate-400 font-mono">
-                              {b.valid_from ? new Date(b.valid_from).toLocaleDateString() : 'Active'}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
         )}
 
@@ -1335,6 +1402,7 @@ export default function StudentDashboardPage() {
             </div>
           </div>
         )}
+      </div>
         {/* Session Extension / Top-Up Modal (Student Gap Closure #4 & #5) */}
         {topupBooking && (
           <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -1564,7 +1632,9 @@ export default function StudentDashboardPage() {
             </div>
           </div>
         )}
-      </main>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

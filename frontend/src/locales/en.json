@@ -11,14 +11,14 @@
   "nav": {
     "home": "Home",
     "search": "Search",
-    "recommend": "AI Solver",
+    "recommend": "Recommender",
     "about": "About Us",
     "signOut": "Sign Out"
   },
   "login": {
-    "welcome": "Welcome back! 👋",
-    "welcomeBack": "Welcome back! 👋",
-    "welcomeNew": "Welcome! 👋",
+    "welcome": "Welcome back!",
+    "welcomeBack": "Welcome back!",
+    "welcomeNew": "Welcome!",
     "emailLabel": "Email address",
     "passwordLabel": "Password",
     "signIn": "Sign In",
