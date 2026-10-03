@@ -4,6 +4,9 @@
 .env
 .env.local
 .env.*.local
+.env.master
+*.master.env
+MASTER_ENV.env
 backend/src/main/resources/application-secrets.yml
 
 # ──────────────────────────────────────────
