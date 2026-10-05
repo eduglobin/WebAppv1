@@ -48,11 +48,11 @@ export default function StudentDashboardPage() {
   const { i18n } = useTranslation();
   const isHi = i18n.language?.startsWith('hi');
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'passes' | 'wallet' | 'books' | 'libraries' | 'privacy'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'bookings' | 'passes' | 'wallet' | 'books' | 'libraries' | 'privacy' | 'active' | 'complaints'>('dashboard');
 
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['dashboard', 'bookings', 'passes', 'wallet', 'books', 'libraries', 'privacy'].includes(tab)) {
+    if (tab && ['dashboard', 'bookings', 'passes', 'wallet', 'books', 'libraries', 'privacy', 'active', 'complaints'].includes(tab)) {
       setActiveTab(tab as any);
     }
   }, [searchParams]);
@@ -60,6 +60,20 @@ export default function StudentDashboardPage() {
   const [wallet, setWallet] = useState<WalletData | null>(null);
   const [transactions, setTransactions] = useState<WalletTx[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Mock variables for UI redesign
+  const profile = { name: "Student", full_name: "Student User", avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" };
+  const userEmail = "student@example.com";
+  const getGreeting = () => "Welcome back";
+  const savedLibraries: any[] = [];
+  const complaints: any[] = [];
+  const formatTime = (d: string) => new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const formatDate = (d: string) => new Date(d).toLocaleDateString();
+  const setSelectedBooking = (b: any) => {};
+  const setShowTimelineModal = (v: boolean) => {};
+  const setShowExtensionModal = (v: boolean) => {};
+  const setVisitorLibId = (v: string) => {};
+
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [disputingId, setDisputingId] = useState<string | null>(null);
   const [vacateTokenMap, setVacateTokenMap] = useState<Record<string, string>>({});
@@ -485,870 +499,321 @@ export default function StudentDashboardPage() {
 
       <div className="flex flex-1 overflow-hidden">
         <StudentSidebar activeItemId={activeTab} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-        {/* ── MAIN CONTENT ── */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-
-            {/* ── HERO BANNER ── */}
-            <div className="relative rounded-3xl bg-gradient-to-br from-[#1a1060] via-[#2d1b8e] to-[#0f0c2e] text-white p-6 overflow-hidden shadow-xl">
-              <div className="absolute -top-8 -right-8 w-40 h-40 bg-violet-400/10 rounded-full blur-2xl pointer-events-none" />
-              <div className="absolute bottom-0 right-16 pointer-events-none opacity-80 hidden sm:block">
-                <svg width="120" height="110" viewBox="0 0 120 110" fill="none">
-                  <ellipse cx="60" cy="95" rx="55" ry="12" fill="#7c3aed" opacity="0.18"/>
-                  <rect x="30" y="40" width="60" height="45" rx="8" fill="#6d28d9" opacity="0.7"/>
-                  <rect x="38" y="32" width="44" height="12" rx="4" fill="#8b5cf6"/>
-                  <circle cx="60" cy="28" r="12" fill="#a78bfa"/>
-                  <rect x="50" y="50" width="20" height="6" rx="2" fill="#ede9fe" opacity="0.6"/>
-                  <rect x="46" y="60" width="28" height="4" rx="2" fill="#ede9fe" opacity="0.4"/>
-                </svg>
-              </div>
-              <div className="relative z-10 max-w-xs">
-                <p className="text-xs font-semibold text-violet-300 mb-1">{greeting()}</p>
-                <h1 className="text-2xl sm:text-3xl font-black leading-tight mb-2">
-                  {isHi ? <>सीखते रहो,<br />बढ़ते रहो! 🚀</> : <>Keep Learning,<br />Keep Growing! 🚀</>}
-                </h1>
-                <p className="text-sm text-violet-200 opacity-80">Find and book the best study spaces near you. Stay consistent, achieve more.</p>
-                <div className="mt-3 inline-block px-3 py-1.5 rounded-lg bg-white/10 border border-white/20 text-xs font-bold text-white">
-                  Better Students · Brighter Futures
-                </div>
-              </div>
+        <main className="flex-1 overflow-y-auto relative">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+        
+        {/* HEADER / WELCOME SECTION */}
+        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#ffdb4d] opacity-10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+          
+          <div className="relative z-10 flex items-center gap-5">
+            <div className="w-16 h-16 rounded-full bg-gray-100 border-2 border-white shadow-sm flex items-center justify-center text-2xl font-bold text-gray-400 overflow-hidden">
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                profile?.full_name?.charAt(0) || userEmail?.charAt(0)?.toUpperCase() || 'S'
+              )}
             </div>
-
-            {/* ── STATS ROW ── */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                { icon: '📚', label: isHi ? 'अध्ययन घंटे' : 'Hours Studied', sub: 'Hours Studied This Week', value: `${studentStats?.hoursStudied ?? 0}h`, color: 'text-blue-600 dark:text-blue-400' },
-                { icon: '💰', label: isHi ? 'वॉलेट बैलेंस' : 'Wallet Balance', sub: 'Wallet Balance', value: `₹${wallet?.balance ?? 0}`, color: 'text-emerald-600 dark:text-emerald-400', extra: isHi ? 'पैसे जोड़ें →' : 'Add Funds →' },
-                { icon: '📋', label: isHi ? 'एक्टिव पास' : 'Active Passes', sub: 'Active Passes', value: `${upcomingBookings.length}`, color: 'text-violet-600 dark:text-violet-400', extra: isHi ? 'पास देखें →' : 'View Passes →' },
-                { icon: '🔥', label: isHi ? 'स्टडी स्ट्रीक' : 'Study Streak', sub: 'Study Streak', value: `${studentStats?.currentStreak ?? 1} Day${(studentStats?.currentStreak ?? 1) > 1 ? 's' : ''}`, color: 'text-orange-500', extra: isHi ? 'जारी रखें!' : 'Keep it up!' },
-              ].map((stat, i) => (
-                <div key={i} className="p-4 rounded-2xl bg-white dark:bg-[#12192e] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col gap-1">
-                  <span className="text-2xl">{stat.icon}</span>
-                  <span className={`text-xl font-black ${stat.color}`}>{stat.value}</span>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">{stat.label}</span>
-                  {stat.extra && <span className="text-[10px] text-violet-500 dark:text-violet-400 font-semibold">{stat.extra}</span>}
-                </div>
-              ))}
+            <div>
+              <p className="text-sm font-medium text-gray-500 mb-1">{getGreeting()},</p>
+              <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+                {profile?.full_name || userEmail?.split('@')[0] || 'Student'}
+              </h1>
             </div>
+          </div>
+          
+          <div className="relative z-10 grid grid-cols-2 gap-3 w-full md:w-auto">
+            <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-w-[120px]">
+              <div className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1">Bookings</div>
+              <div className="text-2xl font-black text-gray-900">{bookings.length}</div>
+            </div>
+            <div className="bg-gray-50 rounded-2xl p-4 border border-gray-100 min-w-[120px]">
+              <div className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-1">Libraries</div>
+              <div className="text-2xl font-black text-gray-900">{savedLibraries.length}</div>
+            </div>
+          </div>
+        </div>
 
-            {/* ── FIND YOUR STUDY SPACE ── */}
-            <div className="bg-white dark:bg-[#12192e] rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 space-y-4">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div>
-                  <h2 className="text-base font-black text-slate-900 dark:text-white">{isHi ? 'अपनी Study Space खोजें' : 'Find Your Study Space'}</h2>
-                  <p className="text-xs text-slate-400">{isHi ? 'शहर, इलाका, या लाइब्रेरी का नाम खोजें' : 'Search by city, locality, or library name'}</p>
-                </div>
-                <button
-                  onClick={handleUseLocation}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 text-xs font-bold border border-violet-200 dark:border-violet-800 hover:bg-violet-100 transition cursor-pointer"
+        {/* NAVIGATION TABS */}
+        <div className="flex overflow-x-auto hide-scrollbar gap-2 pb-2">
+          {[
+            { id: 'active', label: 'Dashboard', icon: '⚡' },
+            { id: 'libraries', label: 'My Libraries', icon: '📚' },
+            { id: 'books', label: 'Circulation', icon: '📖' },
+            { id: 'complaints', label: 'Support', icon: '🎧' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${
+                activeTab === tab.id
+                  ? 'bg-gray-900 text-white shadow-md'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              <span>{tab.icon}</span>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* TAB CONTENTS */}
+        <div className="mt-6">
+          
+          {/* DASHBOARD TAB (Active Bookings) */}
+          {activeTab === 'active' && (
+            <div className="space-y-6">
+              
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900">Current Passes & Bookings</h2>
+                <button 
+                  onClick={() => navigate('/search')}
+                  className="text-sm font-bold text-gray-900 underline decoration-2 decoration-[#ffdb4d] underline-offset-4 hover:text-black transition"
                 >
-                  📍 {locationGranted ? 'Location ON ✓' : 'Current Location'}
+                  Book New Pass →
                 </button>
               </div>
 
-              <div className="flex gap-2">
-                <div className="relative">
-                  <select
-                    value={searchCity}
-                    onChange={e => setSearchCity(e.target.value)}
-                    className="appearance-none h-11 pl-8 pr-8 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#0c1220] text-sm font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-violet-500 min-w-[140px]"
-                  >
-                    <option value="">{isHi ? '🏙️ शहर चुनें' : '🏙️ Select City'}</option>
-                    {['Indore', 'Bhopal', 'Bhilai', 'Raipur', 'Jabalpur', 'Gwalior', 'Ujjain'].map(c => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                  <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">▼</span>
+              {loading ? (
+                <div className="py-20 flex justify-center"><div className="w-8 h-8 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin"></div></div>
+              ) : bookings.length === 0 ? (
+                <div className="bg-white rounded-3xl p-10 text-center border border-gray-100 shadow-sm">
+                  <div className="text-5xl mb-4">🪑</div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">No Active Bookings</h3>
+                  <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto">You don't have any upcoming or active library passes. Secure your study space now.</p>
+                  <button onClick={() => navigate('/search')} className="bg-[#ffdb4d] hover:bg-[#e6c545] text-black font-semibold rounded-xl px-8 py-3 transition shadow-sm">
+                    Explore Libraries
+                  </button>
                 </div>
-                <div className="relative flex-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
-                  <input
-                    type="text"
-                    placeholder={isHi ? 'इलाका, लाइब्रेरी नाम, या परीक्षा (UPSC)...' : 'Locality, library name, or exam (UPSC)...'}
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                    className="w-full h-11 pl-9 pr-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#0c1220] text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:border-violet-500"
-                  />
-                </div>
-              </div>
-
-              <button
-                onClick={handleSearch}
-                className="w-full py-3 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-black text-sm shadow-lg shadow-violet-500/25 transition cursor-pointer"
-              >
-                🔍 {isHi ? 'खोजें / Search' : 'Search Libraries'}
-              </button>
-
-              {/* Quick filters */}
-              <div>
-                <p className="text-xs font-bold text-slate-500 mb-2">Quick Filters</p>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { icon: '📍', label: isHi ? 'सबसे पास' : 'Nearest First', en: 'Nearest First' },
-                    { icon: '📈', label: isHi ? 'लोकप्रिय' : 'Popular Areas', en: 'Popular Areas' },
-                    { icon: '🎯', label: 'UPSC Focus', en: 'UPSC Focus' },
-                    { icon: '❄️', label: isHi ? 'AC Space' : 'AC Spaces', en: 'AC Spaces' },
-                    { icon: '💰', label: isHi ? 'Budget' : 'Budget Friendly', en: 'Budget Friendly' },
-                  ].map(f => (
-                    <button
-                      key={f.en}
-                      onClick={() => { setSearchQuery(f.en); fetchNearby(undefined, undefined, f.en); }}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold border border-slate-200 dark:border-slate-700 hover:bg-violet-50 hover:border-violet-300 dark:hover:bg-violet-900/30 transition cursor-pointer"
-                    >
-                      {f.icon} {f.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* ── MY BOOKINGS + ACTIVE PASSES QUICK CARDS ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* My Bookings */}
-              <div className="bg-white dark:bg-[#12192e] rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">📅</span>
-                    <span className="font-black text-slate-900 dark:text-white text-sm">{isHi ? 'मेरी बुकिंग' : 'My Bookings'}</span>
-                  </div>
-                  <button onClick={() => setActiveTab('bookings')} className="text-xs font-bold text-violet-600 dark:text-violet-400 hover:underline">{isHi ? 'सब देखें →' : 'View All →'}</button>
-                </div>
-                {upcomingBookings.length === 0 ? (
-                  <div className="flex flex-col items-center gap-2 py-6 text-center">
-                    <span className="text-4xl">📅</span>
-                    <p className="text-sm font-bold text-slate-600 dark:text-slate-400">{isHi ? 'कोई बुकिंग नहीं' : 'No Active Bookings'}</p>
-                    <p className="text-xs text-slate-400">No upcoming bookings. Search and book a study space to get started.</p>
-                    <Link to="/search" className="mt-2 px-5 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs shadow transition">
-                      🔍 {isHi ? 'लाइब्रेरी खोजें' : 'Search Libraries'}
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {upcomingBookings.slice(0,2).map(b => (
-                      <div key={b.id} className="p-3 rounded-xl bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800 text-xs">
-                        <p className="font-bold text-slate-800 dark:text-slate-100">{b.library_name}</p>
-                        <p className="text-slate-500 mt-0.5">Seat {b.seat_code} · {new Date(b.valid_from).toLocaleDateString()}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Active Passes */}
-              <div className="bg-white dark:bg-[#12192e] rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">⚡</span>
-                    <span className="font-black text-slate-900 dark:text-white text-sm">{isHi ? 'एक्टिव पास' : 'Active Passes'}</span>
-                  </div>
-                  <button onClick={() => setActiveTab('passes')} className="text-xs font-bold text-violet-600 dark:text-violet-400 hover:underline">{isHi ? 'सब देखें →' : 'View All →'}</button>
-                </div>
-                {upcomingBookings.filter(b => b.status === 'IN_USE' || b.status === 'BOOKED').length === 0 ? (
-                  <div className="flex flex-col items-center gap-2 py-6 text-center">
-                    <span className="text-4xl">📄</span>
-                    <p className="text-sm font-bold text-slate-600 dark:text-slate-400">{isHi ? 'कोई एक्टिव पास नहीं' : 'No Active Passes'}</p>
-                    <p className="text-xs text-slate-400">No active passes. Get a daily or weekly pass for flexible access.</p>
-                    <Link to="/search" className="mt-2 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow transition">
-                      🎟️ Explore Passes
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {upcomingBookings.filter(b => b.status === 'IN_USE' || b.status === 'BOOKED').slice(0,2).map(b => (
-                      <div key={b.id} className="p-4 flex flex-col items-center gap-3 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-xs">
-                        <div className="w-full flex justify-between items-start">
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {bookings.map((booking: any) => {
+                    const isPassed = new Date(booking.end_time) < new Date();
+                    const isActive = booking.status === 'CONFIRMED' && !isPassed;
+                    
+                    return (
+                      <div key={booking.booking_id} className={`bg-white rounded-3xl p-6 border ${isActive ? 'border-[#ffdb4d] shadow-sm' : 'border-gray-200'} relative overflow-hidden group`}>
+                        {isActive && <div className="absolute top-0 right-0 w-16 h-16 bg-[#ffdb4d] opacity-10 rounded-bl-full"></div>}
+                        
+                        <div className="flex justify-between items-start mb-4">
                           <div>
-                            <p className="font-bold text-slate-800 dark:text-slate-100 text-sm">{b.library_name}</p>
-                            <p className="text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
-                              {b.status === 'IN_USE' ? '🟢 IN USE' : '🔵 BOOKED'} · Seat {b.seat_code}
-                            </p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-slate-500 text-[10px]">Booking Ref / Token</p>
-                            <p className="font-mono font-bold text-slate-800 dark:text-slate-200 tracking-wider text-sm">{b.booking_reference}</p>
-                          </div>
-                        </div>
-                        <div className="p-2 bg-white rounded-xl shadow-sm mt-2">
-                          <QRCodeCanvas value={b.qr_payload_hash} size={140} level="H" />
-                        </div>
-                        <p className="text-[10px] text-slate-500 text-center uppercase tracking-widest mt-1">Scan at library desk</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* ── RECOMMENDED LIBRARIES NEAR YOU ── */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <h2 className="text-base font-black text-slate-900 dark:text-white">
-                    {isHi
-                      ? (locationGranted ? '📍 आपके पास की लाइब्रेरी' : '🏛️ अनुशंसित लाइब्रेरी')
-                      : (locationGranted ? '📍 Libraries Near You' : '🏛️ Recommended Libraries')}
-                  </h2>
-                  <p className="text-xs text-slate-400">
-                    {locationGranted ? 'Based on your GPS location' : 'Based on your preferences and location'}
-                  </p>
-                </div>
-                <Link to="/search" className="text-xs font-bold text-violet-600 dark:text-violet-400 hover:underline">{isHi ? 'सब देखें →' : 'View All →'}</Link>
-              </div>
-
-              {nearbyLoading ? (
-                <div className="flex gap-3 overflow-x-auto pb-2">
-                  {[1,2,3,4].map(i => (
-                    <div key={i} className="shrink-0 w-44 rounded-2xl bg-slate-200 dark:bg-slate-800 h-52 animate-pulse" />
-                  ))}
-                </div>
-              ) : nearbyLibraries.length === 0 ? (
-                <div className="p-6 rounded-2xl bg-white dark:bg-[#12192e] border border-slate-200 dark:border-slate-800 text-center">
-                  <p className="text-sm text-slate-500">कोई लाइब्रेरी नहीं मिली। शहर बदलकर खोजें।</p>
-                </div>
-              ) : (
-                <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x">
-                  {nearbyLibraries.map((lib: any) => (
-                    <Link
-                      key={lib.id}
-                      to={`/library/${lib.id}`}
-                      className="shrink-0 w-44 snap-start rounded-2xl bg-white dark:bg-[#12192e] border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all"
-                    >
-                      <div className="h-28 bg-slate-200 dark:bg-slate-800 overflow-hidden">
-                        <img
-                          src={lib.coverUrl || lib.cover_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(lib.name)}&background=7c3aed&color=fff&size=176&bold=true`}
-                          alt={lib.name}
-                          className="w-full h-full object-cover"
-                          onError={e => { (e.target as any).src = `https://ui-avatars.com/api/?name=${encodeURIComponent(lib.name || 'L')}&background=7c3aed&color=fff&size=176&bold=true`; }}
-                        />
-                      </div>
-                      <div className="p-3">
-                        <p className="font-bold text-slate-900 dark:text-white text-xs leading-tight truncate">{lib.name}</p>
-                        <p className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-0.5 truncate">
-                          <span>📍</span> {[lib.locality, lib.city].filter(Boolean).join(', ') || lib.city || 'India'}
-                        </p>
-                        <div className="flex items-center justify-between mt-1.5">
-                          <span className="text-[10px] font-semibold text-slate-500">{lib.totalSeats || lib.total_seats || '—'} seats</span>
-                          <span className="flex items-center gap-0.5 text-[10px] font-bold text-amber-500">⭐ {lib.rating || '4.5'}</span>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* ── PENDING VACATE REQUESTS ── */}
-            {pendingVacateRequests.length > 0 && (
-              <div className="p-4 rounded-2xl bg-rose-500/10 border-2 border-rose-500/30 space-y-2 shadow-md">
-                {pendingVacateRequests.map(req => (
-                  <div key={req.request_id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                    <div>
-                      <span className="px-2.5 py-0.5 text-[10px] font-extrabold rounded-full bg-rose-600 text-white uppercase tracking-wider">⚠️ Owner Vacate Request</span>
-                      <p className="text-xs font-bold mt-1 text-slate-900 dark:text-white">{req.library_name} requests you to vacate Seat {req.seat_code}.</p>
-                      <p className="text-[10px] text-slate-500">Expires at {new Date(req.expires_at).toLocaleTimeString()}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button onClick={() => handleRespondVacateRequest(req.request_id, 'ACCEPT')} className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition cursor-pointer">✓ Accept &amp; Leave</button>
-                      <button onClick={() => handleRespondVacateRequest(req.request_id, 'DECLINE')} className="px-3.5 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold transition cursor-pointer">✕ Decline</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* ── RESERVED MONTHLY PASS ── */}
-            {reservedPass && (
-              <div className="p-6 rounded-3xl bg-gradient-to-r from-emerald-950/80 via-slate-900 to-emerald-900 border border-emerald-500/40 text-white shadow-xl relative overflow-hidden">
-                <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-500 text-slate-950 uppercase tracking-wider">🔒 Dedicated Monthly Pass</span>
-                    </div>
-                    <h2 className="text-2xl font-black tracking-tight">{reservedPass.library_name}</h2>
-                    <p className="text-sm text-emerald-200/80 font-medium mt-0.5">{reservedPass.library_address}</p>
-                    <div className="flex items-center gap-4 mt-4 text-xs font-semibold">
-                      <span className="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">Seat: <strong className="text-emerald-400 font-mono text-sm">{reservedPass.seat_code}</strong></span>
-                      <span className="bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">Period End: <strong className="text-slate-200">{new Date(reservedPass.current_period_end).toLocaleDateString()}</strong></span>
-                    </div>
-                  </div>
-                  {reservedPass.is_checked_in_today && (
-                    <button onClick={handleReservedCheckOut} className="px-5 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-extrabold border border-amber-500/30 transition cursor-pointer">
-                      🚪 Check Out for Today
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* ── TAB CONTENT AREA ── */}
-            <div className="bg-white dark:bg-[#12192e] rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-              {/* Tab switcher - mobile dropdown */}
-              <div className="p-4 border-b border-slate-100 dark:border-slate-800">
-                <label className="block text-[10px] font-extrabold text-slate-400 mb-2 uppercase tracking-widest">{isHi ? 'डैशबोर्ड सेक्शन चुनें / Select Section' : 'Select Dashboard Section'}</label>
-                <div className="relative">
-                  <select
-                    value={activeTab}
-                    onChange={e => setActiveTab(e.target.value as any)}
-                    className="w-full bg-slate-50 dark:bg-[#0c1220] border-2 border-violet-500/40 rounded-xl px-4 py-3 text-sm font-bold text-slate-900 dark:text-white focus:outline-none focus:border-violet-600 appearance-none pr-10 cursor-pointer"
-                  >
-                    <option value="bookings">{isHi ? '📅 मेरी बुकिंग' : '📅 My Bookings'} ({bookings.length})</option>
-                    <option value="libraries">{isHi ? '🏛️ मेरी लाइब्रेरी' : '🏛️ My Libraries & History'} ({Array.from(new Set(bookings.map(b => b.library_name))).filter(Boolean).length})</option>
-                    <option value="passes">{isHi ? '⚡ एक्टिव पास' : '⚡ Active Passes'} ({upcomingBookings.length})</option>
-                    <option value="wallet">{isHi ? '💳 वॉलेट' : '💳 Wallet & Ledger'} {wallet ? `(₹${wallet.balance})` : ''}</option>
-                    <option value="books">{isHi ? '📚 मेरी किताबें' : '📚 My Books'} ({bookLoans.filter(l => l.status === 'ISSUED' || l.status === 'OVERDUE').length})</option>
-                    <option value="privacy">🔐 Privacy &amp; Activity Log</option>
-                  </select>
-                  <div className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">▼</div>
-                </div>
-              </div>
-
-        {/* TAB 1: MY BOOKINGS OR DASHBOARD */}
-        {(activeTab === 'bookings' || activeTab === 'dashboard') && (
-          <div className="space-y-8">
-            {/* Visitor Pass Requests Section */}
-            <div className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
-                <div>
-                  <h3 className="text-sm font-bold font-headers text-slate-900 dark:text-white flex items-center gap-1.5">
-                    <span>🎟️</span>
-                    <span>40-Min Circulation Visitor Passes</span>
-                  </h3>
-                  <p className="text-xs text-slate-500">Quick counter visits for book borrow/return or enquiries without a study desk.</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const libId = bookings[0]?.library_id || (myLibraries.length > 0 ? myLibraries[0]?.library_id : '');
-                    if (libId) setDashVisitorLibId(libId);
-                    setShowDashboardVisitorModal(true);
-                  }}
-                  className="px-3.5 py-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs shadow-md shadow-violet-500/20 transition cursor-pointer flex items-center gap-1"
-                >
-                  + Request Visitor Pass
-                </button>
-              </div>
-
-              {visitorRequests.length === 0 ? (
-                <div className="py-4 text-center text-xs text-slate-400">
-                  No active or past visitor pass requests. Click "+ Request Visitor Pass" above to visit any library counter.
-                </div>
-              ) : (
-                <div className="grid gap-3">
-                  {visitorRequests.map(v => (
-                    <div key={v.request_id} className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 flex justify-between items-center text-xs">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-900 dark:text-white">{v.library_name}</span>
-                          <span className="text-slate-400">· {v.locality || v.city}</span>
-                        </div>
-                        <p className="text-slate-500 mt-0.5">Purpose: <strong className="text-slate-700 dark:text-slate-300">{v.purpose}</strong> · {new Date(v.check_in_at).toLocaleDateString()}</p>
-                      </div>
-                      <span className={`px-3 py-1 rounded-full text-xxs font-extrabold uppercase tracking-wider ${
-                        v.status === 'ACTIVE' || v.status === 'ACCEPTED'
-                          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
-                          : v.status === 'REJECTED' || v.status === 'DECLINED'
-                          ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/20'
-                          : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20'
-                      }`}>
-                        {v.status === 'ACTIVE' ? '✓ ACCEPTED' : v.status === 'PENDING_APPROVAL' ? '⏳ PENDING' : v.status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            {/* ACTIVE CIRCULATION DESK VISIT CARD */}
-            {activeCirculationVisit && (
-              <div className="p-5 rounded-3xl bg-violet-600/10 border-2 border-violet-500/30 space-y-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="text-xxs uppercase tracking-wider font-extrabold px-2.5 py-1 rounded-full bg-violet-600 text-white">
-                      Desk Visitor Active
-                    </span>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white mt-1 font-headers">
-                      {activeCirculationVisit.library_name} — Circulation Desk
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Visiting for: <strong className="uppercase text-violet-600 dark:text-violet-400">{activeCirculationVisit.purpose}</strong> (Issue/Reissue/Return)
-                    </p>
-                  </div>
-                  <div className="text-right font-mono">
-                    <span className="text-xs font-bold text-slate-400 block">Institute ID</span>
-                    <span className="text-xs font-extrabold text-slate-900 dark:text-white">
-                      {activeCirculationVisit.institute_id_number || 'N/A'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap justify-between items-center pt-2 border-t border-violet-500/20 text-xs">
-                  <div className="font-mono text-slate-600 dark:text-slate-300">
-                    ⏱️ Time Present: <strong>{Math.round(activeCirculationVisit.elapsed_minutes || 0)} mins</strong> / 40 mins limit
-                  </div>
-
-                  {activeCirculationVisit.status === 'EXIT_REQUESTED' ? (
-                    <span className="px-3 py-1.5 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 font-extrabold text-xxs border border-amber-500/30 animate-pulse">
-                      ⌛ Exit Request Pending Owner Approval (ID: {activeCirculationVisit.institute_id_number})
-                    </span>
-                  ) : (
-                    <button
-                      onClick={() => handleStudentRequestExit(activeCirculationVisit.visitor_id)}
-                      className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md shadow-rose-500/20 transition cursor-pointer"
-                    >
-                      🚪 Request Desk Exit
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Upcoming Section */}
-            <div>
-              <h2 className="text-base font-bold font-headers text-slate-800 dark:text-white mb-3">
-                Upcoming & Active Reservations
-              </h2>
-              {upcomingBookings.length === 0 ? (
-                <div className="p-8 text-center rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/30 text-slate-400 text-xs">
-                  No upcoming reservations. Search and reserve a desk to see it here!
-                </div>
-              ) : (
-                <div className="grid gap-4">
-                  {upcomingBookings.map(b => (
-                    <BookingRow
-                      key={b.id}
-                      booking={b}
-                      onCancel={handleCancel}
-                      onDispute={handleDispute}
-                      onVacateSelf={handleVacateSelf}
-                      onViewTimeline={handleViewTimeline}
-                      cancellingId={cancellingId}
-                      disputingId={disputingId}
-                      vacatingSelfId={vacatingSelfId}
-                      onTopup={handleOpenTopup}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Past Section */}
-            {pastBookings.length > 0 && (
-              <div>
-                <h2 className="text-base font-bold font-headers text-slate-800 dark:text-white mb-3">
-                  Completed Sessions
-                </h2>
-                <div className="grid gap-4">
-                  {pastBookings.map(b => (
-                    <BookingRow
-                      key={b.id}
-                      booking={b}
-                      onViewTimeline={handleViewTimeline}
-                      onRebookCheck={handleRebookCheck}
-                      rebookInfo={rebookCheckMap[b.id]}
-                      checkingRebookId={checkingRebookId}
-                      isPast
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Cancelled Section */}
-            {cancelledBookings.length > 0 && (
-              <div>
-                <h2 className="text-base font-bold font-headers text-slate-800 dark:text-white mb-3">
-                  Cancelled Bookings & Disputes
-                </h2>
-                <div className="grid gap-4">
-                  {cancelledBookings.map(b => (
-                    <BookingRow
-                      key={b.id}
-                      booking={b}
-                      onDispute={handleDispute}
-                      onViewTimeline={handleViewTimeline}
-                      disputingId={disputingId}
-                      isCancelled
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* TAB 2: MY PASSES (QR FIRST FOR PHYSICAL ENTRY) */}
-        {activeTab === 'passes' && (
-          <div>
-            <div className="mb-4">
-              <p className="text-xs text-slate-500">
-                Present this QR code to the library front desk scanner for immediate check-in.
-              </p>
-            </div>
-
-            {upcomingBookings.length === 0 ? (
-              <div className="p-12 text-center rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/30 text-slate-400 text-xs">
-                You have no active check-in passes right now.
-              </div>
-            ) : (
-              <div className="grid md:grid-cols-2 gap-6">
-                {upcomingBookings.map(b => (
-                  <div
-                    key={b.id}
-                    className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col items-center text-center"
-                  >
-                    <div className="mb-2">
-                      <span className="text-xs font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wider">
-                        {b.library_name}
-                      </span>
-                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                        Seat {b.seat_code}
-                      </h3>
-                      <p className="text-xs text-slate-400">
-                        {b.locker_code ? `Locker: ${b.locker_code} · ` : ''}Valid until: {new Date(b.valid_until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
-
-                    <div className="p-3 bg-white rounded-2xl border border-slate-100 shadow-md my-4">
-                      <QRCodeCanvas value={b.qr_payload_hash} size={180} level="H" />
-                    </div>
-
-                    <div className="mt-2 font-mono font-bold text-sm tracking-wider text-slate-700 dark:text-slate-300">
-                      {b.booking_reference}
-                    </div>
-
-                    {/* Vacate Token Section — only for IN_USE bookings */}
-                    {b.status === 'IN_USE' && (
-                      <div className="mt-4 w-full">
-                        {vacateTokenMap[b.id] ? (
-                          <div className="p-4 rounded-2xl bg-rose-500/5 border border-rose-500/20 text-center space-y-1">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-rose-500">Vacate Token</p>
-                            <p className="text-3xl font-extrabold font-mono tracking-[0.3em] text-rose-600 dark:text-rose-400">
-                              {vacateTokenMap[b.id]}
-                            </p>
-                            <p className="text-xs text-slate-500">Share this code with the library owner to vacate your seat.</p>
-                            <button
-                              onClick={() => setVacateTokenMap(prev => { const n = {...prev}; delete n[b.id]; return n; })}
-                              className="text-xs text-slate-400 hover:text-slate-700 mt-1 underline"
-                            >Hide</button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => handleGenerateVacateToken(b.id)}
-                            disabled={generatingTokenId === b.id}
-                            className="w-full py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20 text-xs font-bold transition disabled:opacity-50"
-                          >
-                            {generatingTokenId === b.id ? 'Generating…' : '🔑 Generate Vacate Token (Offline Backup)'}
-                          </button>
-                        )}
-                      </div>
-                    )}
-
-                    <Link
-                      to={`/booking/${b.id}/confirmed`}
-                      className="mt-4 text-xs font-semibold text-violet-600 dark:text-violet-400 hover:underline"
-                    >
-                      View Full Ticket & Offline Options →
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* TAB 3: WALLET & LEDGER */}
-        {activeTab === 'wallet' && (
-          <div className="space-y-6">
-            {/* Balance Card */}
-            <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                  Current Student Balance
-                </span>
-                <div className="text-3xl font-bold font-mono mt-1 text-slate-900 dark:text-white">
-                  ₹{wallet?.balance ?? 0}
-                </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  Automatic refund credits and cancellation penalty ledger
-                </p>
-              </div>
-
-              {wallet?.hasOutstandingFine && (
-                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs">
-                  <strong>Pending Fine:</strong> ₹{wallet.fineOwed} (reconciled at checkout)
-                </div>
-              )}
-            </div>
-
-            {/* Transactions History */}
-            <div>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-3">
-                Transaction History
-              </h3>
-              {transactions.length === 0 ? (
-                <div className="p-8 text-center rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/30 text-slate-400 text-xs">
-                  No wallet transactions recorded yet.
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-400 border-b border-slate-200 dark:border-slate-800">
-                      <tr>
-                        <th className="p-3">Reason</th>
-                        <th className="p-3">Amount</th>
-                        <th className="p-3">Date</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                      {transactions.map(tx => (
-                        <tr key={tx.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                          <td className="p-3 font-medium text-slate-800 dark:text-slate-200">
-                            {tx.reason.replace(/_/g, ' ')}
-                          </td>
-                          <td className={`p-3 font-mono font-bold ${tx.delta >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                            {tx.delta >= 0 ? `+₹${tx.delta}` : `-₹${Math.abs(tx.delta)}`}
-                          </td>
-                          <td className="p-3 text-slate-400">
-                            {new Date(tx.created_at).toLocaleDateString()}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 4: MY BOOKS (MODULE 34) */}
-        {activeTab === 'books' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-              <div>
-                <h2 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                  <span>📚</span> Physical Library Books & Circulation
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  View books borrowed from your enrolled libraries, due dates, and return history.
-                </p>
-              </div>
-            </div>
-
-            {bookLoans.length === 0 ? (
-              <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 text-slate-400 space-y-2">
-                <span className="text-4xl block">📖</span>
-                <p className="font-semibold text-sm">No Physical Book Loans Found</p>
-                <p className="text-xs">Visit your library counter to borrow physical books or renew existing ones.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {bookLoans.map((loan: any) => {
-                  const isOverdue = loan.status === 'OVERDUE' || (loan.status === 'ISSUED' && new Date(loan.due_at) < new Date());
-                  const isReturned = loan.status === 'RETURNED';
-
-                  return (
-                    <div
-                      key={loan.loan_id}
-                      className={`p-5 rounded-2xl border transition shadow-sm space-y-3 bg-white dark:bg-slate-900 ${
-                        isOverdue
-                          ? 'border-rose-500/40 dark:border-rose-500/30 bg-rose-50/30 dark:bg-rose-950/10'
-                          : isReturned
-                          ? 'border-slate-200 dark:border-slate-800 opacity-75'
-                          : 'border-emerald-500/30 dark:border-emerald-500/20'
-                      }`}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <span className="text-xxs font-extrabold uppercase px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 tracking-wider">
-                            {loan.category || 'General'}
-                          </span>
-                          <h3 className="font-bold text-base text-slate-900 dark:text-white mt-1">
-                            {loan.title}
-                          </h3>
-                          <p className="text-xs text-slate-500">Author: {loan.author || 'Unknown'} · Code: {loan.book_code}</p>
-                        </div>
-                        <span
-                          className={`text-xxs font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider ${
-                            isOverdue
-                              ? 'bg-rose-500/20 text-rose-600 dark:text-rose-400'
-                              : isReturned
-                              ? 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                              : 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                          }`}
-                        >
-                          {isOverdue ? '⚠️ Overdue' : isReturned ? '✓ Returned' : '● Active Loan'}
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-100 dark:border-slate-800/80">
-                        <div>
-                          <span className="text-slate-400 text-xxs uppercase block font-semibold">Library</span>
-                          <span className="font-semibold text-slate-700 dark:text-slate-300">{loan.library_name}</span>
-                        </div>
-                        <div>
-                          <span className="text-slate-400 text-xxs uppercase block font-semibold">Due Date</span>
-                          <span className={`font-bold ${isOverdue ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-200'}`}>
-                            {new Date(loan.due_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-between items-center text-xxs text-slate-400 pt-1">
-                        <span>Issued: {new Date(loan.issued_at).toLocaleDateString()}</span>
-                        <span>Reissues: {loan.reissue_count || 0}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* TAB 5: MY LIBRARIES — Booking & Visit History Across All Libraries */}
-        {activeTab === 'libraries' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-              <div>
-                <h2 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                  <span>🏛️</span> My Library History
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  All libraries you have booked or enrolled in, with your visit history.
-                </p>
-              </div>
-            </div>
-
-            {librariesLoading ? (
-              <div className="py-16 text-center text-slate-400 text-sm">
-                <div className="w-8 h-8 border-2 border-violet-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                Loading your library history…
-              </div>
-            ) : myLibraries.length === 0 ? (
-              <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 text-slate-400 space-y-2">
-                <span className="text-4xl block">🏛️</span>
-                <p className="font-semibold text-sm">No Library History Yet</p>
-                <p className="text-xs">Book a study seat at any EduGlobin library to see your history here.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {myLibraries.map((lib: any) => {
-                  const statusColorMap: Record<string, string> = {
-                    IN_USE:    'text-emerald-500',
-                    BOOKED:    'text-violet-500',
-                    COMPLETED: 'text-slate-400',
-                    CANCELLED: 'text-rose-400',
-                  };
-                  const lastStatus = lib.last_status || 'COMPLETED';
-                  const statusColor = statusColorMap[lastStatus] || 'text-slate-400';
-
-                  return (
-                    <div
-                      key={lib.library_id}
-                      className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3 hover:border-violet-300 dark:hover:border-violet-700 transition-colors"
-                    >
-                      <div className="flex justify-between items-start gap-2">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-base text-slate-900 dark:text-white truncate">{lib.library_name}</h3>
-                          <p className="text-xs text-slate-500 mt-0.5">
-                            {[lib.locality, lib.city, lib.state].filter(Boolean).join(', ')}
-                          </p>
-                        </div>
-                        <span className={`text-xxs font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 ${statusColor} shrink-0`}>
-                          {lastStatus}
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-2 text-center pt-2 border-t border-slate-100 dark:border-slate-800">
-                        <div>
-                          <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">Bookings</span>
-                          <span className="font-extrabold text-slate-800 dark:text-slate-200 text-lg">{lib.total_bookings || 0}</span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">Last Seat</span>
-                          <span className="font-bold font-mono text-slate-700 dark:text-slate-300 text-sm">{lib.last_seat_code || '—'}</span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider block">Last Visit</span>
-                          <span className="font-semibold text-slate-600 dark:text-slate-400 text-xs">
-                            {lib.last_booking_at
-                              ? new Date(lib.last_booking_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' })
-                              : '—'}
-                          </span>
-                        </div>
-                      </div>
-
-                      {lib.has_profile && (
-                        <div className="flex items-center gap-1.5 text-xxs text-teal-600 dark:text-teal-400">
-                          <span>✓</span>
-                          <span className="font-semibold">Profile enrolled at this library</span>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* TAB: PRIVACY & DPDP DATA ACCESS LOG */}
-        {activeTab === 'privacy' && (
-          <div className="space-y-6">
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-sm space-y-4">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white font-headers flex items-center gap-2">
-                  <span>🔐</span> DPDP Cross-Library Data Access Audit Log
-                </h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Under the Digital Personal Data Protection (DPDP) Act, you have the right to know every instance where your profile, government ID, or contact details were accessed by library partners or automated KYC systems.
-                </p>
-              </div>
-
-              {dataAccessLogs.length === 0 ? (
-                <div className="py-12 text-center text-xs text-slate-400">
-                  No data access logs recorded.
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 dark:bg-slate-800/60 text-slate-400 border-b border-slate-200 dark:border-slate-800">
-                      <tr>
-                        <th className="p-3">Accessed At</th>
-                        <th className="p-3">Accessing Facility / Entity</th>
-                        <th className="p-3">Role / Service</th>
-                        <th className="p-3">Data Category</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                      {dataAccessLogs.map((log, i) => (
-                        <tr key={log.id || i} className="hover:bg-slate-50 dark:hover:bg-slate-800/30">
-                          <td className="p-3 text-slate-400 font-mono text-xxs">
-                            {new Date(log.accessed_at).toLocaleString()}
-                          </td>
-                          <td className="p-3 font-semibold text-slate-900 dark:text-white">
-                            {log.library_name}
-                          </td>
-                          <td className="p-3">
-                            <span className="px-2 py-0.5 rounded text-xxs font-mono font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                              {log.accessed_by_role}
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider mb-2 ${
+                              booking.status === 'CONFIRMED' ? 'bg-emerald-100 text-emerald-700' :
+                              booking.status === 'PENDING' ? 'bg-amber-100 text-amber-700' :
+                              booking.status === 'CANCELLED' ? 'bg-rose-100 text-rose-700' :
+                              'bg-gray-100 text-gray-600'
+                            }`}>
+                              {booking.status === 'CONFIRMED' ? '✨ Confirmed' : booking.status}
                             </span>
-                          </td>
-                          <td className="p-3 text-slate-600 dark:text-slate-300 font-medium">
-                            {log.data_type}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                            <h3 className="text-lg font-black text-gray-900 leading-tight">{booking.library_name || 'Library'}</h3>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3 mb-6 bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-500 font-medium">Pass Type</span>
+                            <span className="font-bold text-gray-900">{booking.pass_type}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-500 font-medium">Desk Code</span>
+                            <span className="font-black text-gray-900 bg-white border border-gray-200 px-2 py-0.5 rounded">{booking.seat_code || 'TBD'}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-500 font-medium">Time</span>
+                            <span className="font-bold text-gray-900">{formatTime(booking.start_time)} - {formatTime(booking.end_time)}</span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <button 
+                            onClick={() => { setSelectedBooking(booking); setShowTimelineModal(true); }}
+                            className="py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-700 hover:bg-gray-50 transition"
+                          >
+                            View Timeline
+                          </button>
+                          <button 
+                            onClick={() => { setSelectedBooking(booking); setShowExtensionModal(true); }}
+                            disabled={!isActive || booking.pass_type === 'MONTHLY'}
+                            className={`py-2.5 rounded-xl text-sm font-bold transition ${
+                              (!isActive || booking.pass_type === 'MONTHLY') 
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                : 'bg-gray-900 text-white hover:bg-black shadow-sm'
+                            }`}
+                          >
+                            Extend Time
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
-          </div>
-        )}
+          )}
+
+          {/* MY LIBRARIES TAB */}
+          {activeTab === 'libraries' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-xl font-bold text-gray-900">Saved Libraries</h2>
+              </div>
+              
+              {loading ? (
+                <div className="py-20 flex justify-center"><div className="w-8 h-8 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin"></div></div>
+              ) : savedLibraries.length === 0 ? (
+                <div className="bg-white rounded-3xl p-10 text-center border border-gray-100 shadow-sm">
+                  <div className="text-5xl mb-4">🏫</div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">No Saved Libraries</h3>
+                  <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto">Libraries you interact with will appear here for quick access.</p>
+                  <button onClick={() => navigate('/search')} className="bg-[#ffdb4d] hover:bg-[#e6c545] text-black font-semibold rounded-xl px-8 py-3 transition shadow-sm">
+                    Search Libraries
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {savedLibraries.map((lib: any) => (
+                    <div key={lib.library_id} className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-bold text-gray-900 mb-1">{lib.library_name}</h3>
+                          <div className="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <span className="w-2 h-2 rounded-full bg-[#ffdb4d]"></span>
+                            {lib.library_category || 'Public Library'}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gray-50 rounded-xl p-3 mb-4 text-sm font-medium text-gray-600 flex justify-between items-center">
+                        <span>Associated Profile Status</span>
+                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${lib.is_claimed ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-700'}`}>
+                          {lib.is_claimed ? '✓ Verified' : 'Pending'}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <button 
+                          onClick={() => navigate(`/library/${lib.library_id}`)}
+                          className="py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-700 hover:bg-gray-50 transition text-center"
+                        >
+                          View Details
+                        </button>
+                        <button 
+                          onClick={() => { setVisitorLibId(lib.library_id); setShowDashboardVisitorModal(true); }}
+                          className="py-2.5 rounded-xl bg-[#ffdb4d] text-black text-sm font-bold hover:bg-[#e6c545] transition text-center"
+                        >
+                          Visitor Pass
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* CIRCULATION TAB */}
+          {activeTab === 'books' && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-2">Borrowed Materials</h2>
+              
+              {loading ? (
+                <div className="py-20 flex justify-center"><div className="w-8 h-8 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin"></div></div>
+              ) : bookLoans.length === 0 ? (
+                <div className="bg-white rounded-3xl p-10 text-center border border-gray-100 shadow-sm">
+                  <div className="text-5xl mb-4">📚</div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">No Books Borrowed</h3>
+                  <p className="text-sm text-gray-500 max-w-sm mx-auto">You haven't checked out any books or laptops from the library circulation desk.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {bookLoans.map((loan: any) => {
+                    const isOverdue = loan.status === 'OVERDUE' || (loan.status === 'ISSUED' && new Date(loan.due_at) < new Date());
+                    
+                    return (
+                      <div key={loan.loan_id} className={`bg-white rounded-3xl p-5 border ${isOverdue ? 'border-rose-300 bg-rose-50/30' : 'border-gray-100'} shadow-sm`}>
+                        <div className="flex justify-between items-start mb-3">
+                          <h3 className="text-base font-bold text-gray-900">{loan.title}</h3>
+                          <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
+                            isOverdue ? 'bg-rose-100 text-rose-700' : 
+                            loan.status === 'RETURNED' ? 'bg-gray-100 text-gray-500' : 
+                            'bg-emerald-100 text-emerald-700'
+                          }`}>
+                            {isOverdue ? 'OVERDUE' : loan.status}
+                          </span>
+                        </div>
+                        
+                        <p className="text-sm text-gray-500 mb-4 font-medium">{loan.library_name}</p>
+                        
+                        <div className="bg-gray-50 rounded-xl p-3 border border-gray-100 space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-500">Issued</span>
+                            <span className="font-semibold text-gray-900">{formatDate(loan.issued_at)}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="text-gray-500">Due Date</span>
+                            <span className={`font-bold ${isOverdue ? 'text-rose-600' : 'text-gray-900'}`}>{formatDate(loan.due_at)}</span>
+                          </div>
+                          {loan.returned_at && (
+                            <div className="flex justify-between text-sm">
+                              <span className="text-gray-500">Returned</span>
+                              <span className="font-semibold text-gray-900">{formatDate(loan.returned_at)}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* COMPLAINTS TAB */}
+          {activeTab === 'complaints' && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-2">Support Tickets</h2>
+              
+              {loading ? (
+                <div className="py-20 flex justify-center"><div className="w-8 h-8 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin"></div></div>
+              ) : complaints.length === 0 ? (
+                <div className="bg-white rounded-3xl p-10 text-center border border-gray-100 shadow-sm">
+                  <div className="text-5xl mb-4">💬</div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">No Support Tickets</h3>
+                  <p className="text-sm text-gray-500 max-w-sm mx-auto">You haven't reported any issues. If you need help, you can report issues directly from the library page.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {complaints.map((comp: any) => (
+                    <div key={comp.id} className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm">
+                      <div className="flex justify-between items-start mb-3">
+                        <span className="px-2 py-1 bg-gray-100 rounded text-[10px] font-bold text-gray-600 uppercase tracking-wider">
+                          {comp.category || 'General'}
+                        </span>
+                        <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
+                          comp.status === 'RESOLVED' ? 'bg-emerald-100 text-emerald-700' : 
+                          comp.status === 'IN_PROGRESS' ? 'bg-amber-100 text-amber-700' : 
+                          'bg-rose-100 text-rose-700'
+                        }`}>
+                          {comp.status || 'PENDING'}
+                        </span>
+                      </div>
+                      
+                      <h3 className="text-base font-bold text-gray-900 mb-1">{comp.subject}</h3>
+                      <p className="text-sm text-gray-500 mb-4 line-clamp-2">{comp.description}</p>
+                      
+                      <div className="text-xs font-semibold text-gray-400">
+                        {formatDate(comp.created_at)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+        </div>
+      </div>
+
 
         {/* Module 39: Single Immutable Booking Timeline Modal */}
         {selectedTimelineId && (
@@ -1402,7 +867,6 @@ export default function StudentDashboardPage() {
             </div>
           </div>
         )}
-      </div>
         {/* Session Extension / Top-Up Modal (Student Gap Closure #4 & #5) */}
         {topupBooking && (
           <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -1632,7 +1096,6 @@ export default function StudentDashboardPage() {
             </div>
           </div>
         )}
-          </div>
         </main>
       </div>
     </div>
