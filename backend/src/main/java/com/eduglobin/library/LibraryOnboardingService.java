@@ -425,15 +425,15 @@ public class LibraryOnboardingService {
 
         String sql = "UPDATE libraries SET approval_status = 'APPROVED', is_published = TRUE, " +
                 "approved_by = :approvedBy, approved_at = :approvedAt " +
-                "WHERE id = :libraryId";
+                "WHERE id = :libraryId AND approval_status IN ('PENDING_APPROVAL', 'CHANGES_REQUESTED')";
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("libraryId", libraryId)
                 .addValue("approvedBy", adminUuid)
                 .addValue("approvedAt", Timestamp.from(Instant.now()));
 
         int updated = jdbcTemplate.update(sql, params);
-        if (updated == 0) {
-            throw new EduGlobinException("Library not found or status update failed.");
+        if (updated != 1) {
+            throw new EduGlobinException("Library approval failed. Library may already be approved, rejected, suspended, or not found.");
         }
 
         logAudit(adminId, "APPROVE", "LIBRARIES", libraryId, "approval_status=APPROVED, is_published=TRUE", "Approved library listing");
