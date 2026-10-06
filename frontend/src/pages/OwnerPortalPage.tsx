@@ -4037,15 +4037,6 @@ export default function OwnerPortalPage() {
               🔄 Refresh & Check Approval Status
             </button>
 
-            {/* Quick Demo Instant Unlock for pairwise verification */}
-            <button
-              onClick={() => {
-                setLibrary({ ...library, approvalStatus: 'APPROVED' });
-              }}
-              className="w-full py-2.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs border border-emerald-500/30 transition cursor-pointer"
-            >
-              ⚡ Instant Unlock Demo (Simulate Super Admin Approval)
-            </button>
 
             <button
               onClick={() => setIsEditingWizard(true)}

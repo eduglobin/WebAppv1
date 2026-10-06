@@ -624,19 +624,18 @@ public class LibraryOnboardingService {
 
     private void logAudit(String actorId, String action, String entityType, UUID entityId, String afterValue, String detail) {
         try {
+            String roleSql = "SELECT role FROM profiles WHERE id = CAST(:actorId AS uuid)";
+            java.util.List<String> roles = jdbcTemplate.query(roleSql, new MapSqlParameterSource("actorId", actorId), (rs, rowNum) -> rs.getString("role"));
+            
+            if (roles.isEmpty()) {
+                return; // Cannot log audit if profile does not exist (would violate FK and rollback transaction)
+            }
+            
+            String role = roles.get(0);
+            String jsonVal = afterValue != null ? "{\"details\": \"" + afterValue + "\"}" : null;
+
             String sql = "INSERT INTO audit_logs (id, actor_id, actor_role, action, entity_type, entity_id, after_value) " +
                     "VALUES (:id, CAST(:actorId AS uuid), :role, :action, :entityType, :entityId, CAST(:afterValue AS jsonb))";
-            
-            // Resolve actor role from profiles
-            String roleSql = "SELECT role FROM profiles WHERE id = CAST(:actorId AS uuid)";
-            String role = "OWNER";
-            try {
-                role = jdbcTemplate.queryForObject(roleSql, new MapSqlParameterSource("actorId", actorId), String.class);
-            } catch (Exception e) {
-                // ignore, default to OWNER or STAFF
-            }
-
-            String jsonVal = afterValue != null ? "{\"details\": \"" + afterValue + "\"}" : null;
 
             MapSqlParameterSource params = new MapSqlParameterSource()
                     .addValue("id", UUID.randomUUID())
