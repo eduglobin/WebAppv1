@@ -1172,1280 +1172,222 @@ export default function LibraryDetailPage() {
 
 
   return (
-    <div className="min-h-screen bg-[#f5f6fa] dark:bg-[#070b14] text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-300">
-      <Navbar />
+    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans pb-24">
+      {activeDetailTab !== ('seat_map' as any) ? (
+        <div className="max-w-xl mx-auto bg-white min-h-screen shadow-sm relative">
+          {/* TOP BAR */}
+          <div className="flex items-center justify-between p-4 bg-white border-b border-gray-100 sticky top-0 z-10">
+            <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full hover:bg-gray-100">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+            <span className="text-sm font-medium text-gray-500 tracking-wide">Library photo 1 / 4</span>
+            <div className="w-9" />
+          </div>
 
-      {/* ── HERO PHOTO CAROUSEL ── */}
-      {(() => {
-        const photos = libraryPhotos.length > 0
-          ? libraryPhotos
-          : [{ id: 'placeholder', url: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=900&q=80' }];
-        const currentPhoto = photos[photoIndex];
-        const total = photos.length;
-        return (
-          <div className="relative w-full h-52 sm:h-72 overflow-hidden bg-slate-300 dark:bg-slate-800 select-none">
-            {/* Current image */}
-            <img
-              src={currentPhoto.url}
-              alt={(currentPhoto as any).caption || library?.name || 'Library'}
-              className="w-full h-full object-cover transition-opacity duration-300"
-            />
-            {/* Gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
-
-            {/* Back button */}
-            <button
-              onClick={() => navigate(-1)}
-              className="absolute top-4 left-4 w-9 h-9 rounded-full bg-white/90 dark:bg-slate-900/80 backdrop-blur flex items-center justify-center shadow text-slate-700 dark:text-white text-base font-bold hover:bg-white transition"
-              title="Go Back"
-            >←</button>
-
-            {/* Save / Share */}
-            <div className="absolute top-4 right-4 flex items-center gap-2">
-              <button className="w-9 h-9 rounded-full bg-white/90 dark:bg-slate-900/80 backdrop-blur flex items-center justify-center shadow text-slate-700 text-base hover:bg-white transition">♡</button>
-              <button className="w-9 h-9 rounded-full bg-white/90 dark:bg-slate-900/80 backdrop-blur flex items-center justify-center shadow text-slate-700 text-base hover:bg-white transition">⤴</button>
+          <div className="p-5">
+            <h1 className="text-3xl font-bold text-gray-900 mb-1">{library?.name || 'Pragati Study Point'}</h1>
+            <p className="text-sm text-gray-500 mb-5">
+              {library?.locality || 'Bhawarkua'}, {library?.city || 'Indore'} - 1.2 km - 4.6 (38 reviews)
+            </p>
+            
+            <div className="flex gap-2 mb-5">
+              <span className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium border border-gray-200">UPSC</span>
+              <span className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium border border-gray-200">MPPSC</span>
+              <span className="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium border border-gray-200">SSC</span>
             </div>
 
-            {/* Prev / Next arrows (only if >1 photo) */}
-            {total > 1 && (
-              <>
-                <button
-                  onClick={() => setPhotoIndex(i => (i - 1 + total) % total)}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white text-sm flex items-center justify-center hover:bg-black/75 transition"
-                >‹</button>
-                <button
-                  onClick={() => setPhotoIndex(i => (i + 1) % total)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 text-white text-sm flex items-center justify-center hover:bg-black/75 transition"
-                >›</button>
-                {/* Dot indicators */}
-                <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-1.5">
-                  {photos.map((_, i) => (
-                    <button key={i} onClick={() => setPhotoIndex(i)}
-                      className={`rounded-full transition-all ${ i === photoIndex ? 'w-4 h-1.5 bg-white' : 'w-1.5 h-1.5 bg-white/50 hover:bg-white/80' }`}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-
-            {/* Image count badge */}
-            <div className="absolute bottom-3 right-4 px-2.5 py-0.5 rounded-full bg-black/60 text-white text-[11px] font-bold">
-              {photoIndex + 1} / {total}
+            <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-8 border-b border-gray-100 pb-8">
+              <span className="flex items-center gap-1.5"><span className="text-lg">❄️</span> AC</span>
+              <span className="flex items-center gap-1.5"><span className="text-lg">📶</span> Wi-Fi</span>
+              <span className="flex items-center gap-1.5"><span className="text-lg">🔌</span> Sockets</span>
+              <span className="flex items-center gap-1.5"><span className="text-lg">👩</span> Girls room</span>
+              <span className="flex items-center gap-1.5"><span className="text-lg">🔒</span> Lockers</span>
             </div>
 
-            {/* Seat lock timer */}
-            {seatLockToken && secondsLeft !== null && (
-              <div className="absolute bottom-3 left-4 flex items-center gap-1.5 text-xs font-mono font-bold px-3 py-1.5 rounded-xl border border-amber-500/60 bg-amber-500/80 text-white animate-pulse">
-                ⏱ {Math.floor(secondsLeft / 60)}:{String(secondsLeft % 60).padStart(2, '0')}
-              </div>
-            )}
-          </div>
-        );
-      })()}
-
-      <main className="flex-1 w-full max-w-2xl mx-auto px-0 sm:px-4 flex flex-col pb-28">
-        {/* ── LIBRARY INFO CARD ── */}
-        <div className="bg-white dark:bg-[#0c1220] rounded-none sm:rounded-3xl shadow-sm px-5 py-5 mt-0 sm:mt-4 space-y-4">
-
-          {/* Name + Category badge */}
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <h1 className="text-xl font-black text-slate-900 dark:text-white leading-tight">
-                {library?.name || (loading ? '...' : 'Pragya Study Zone')}
-              </h1>
-              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                <span className="text-amber-500 text-sm">★</span>
-                <span className="text-sm font-bold text-slate-800 dark:text-slate-200">4.6</span>
-                <span className="text-xs text-slate-400">(328 reviews)</span>
-                <span className="text-slate-300 dark:text-slate-600">•</span>
-                <span className="text-xs text-slate-500">Study • Focus • Achieve</span>
-              </div>
+            <h2 className="text-lg font-bold mb-4">Shifts and prices</h2>
+            <div className="overflow-x-auto mb-5">
+              <table className="w-full text-sm text-left">
+                <thead>
+                  <tr className="text-gray-400 border-b border-gray-200">
+                    <th className="py-3 font-medium">Shift</th>
+                    <th className="py-3 font-medium">Time</th>
+                    <th className="py-3 font-medium">Month</th>
+                    <th className="py-3 font-medium">Day</th>
+                    <th className="py-3 font-medium">Free</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-gray-50">
+                    <td className="py-3.5 text-gray-800">Morning</td>
+                    <td className="text-gray-500">6-12</td>
+                    <td className="font-semibold">₹800</td>
+                    <td className="text-gray-500">₹60</td>
+                    <td className="font-medium text-gray-700">14</td>
+                  </tr>
+                  <tr className="border-b border-gray-50">
+                    <td className="py-3.5 text-gray-800">Evening</td>
+                    <td className="text-gray-500">12-6</td>
+                    <td className="font-semibold">₹800</td>
+                    <td className="text-gray-500">₹60</td>
+                    <td className="font-medium text-gray-700">6</td>
+                  </tr>
+                  <tr className="border-b border-gray-50">
+                    <td className="py-3.5 text-gray-800">Full day</td>
+                    <td className="text-gray-500">6-10</td>
+                    <td className="font-semibold">₹1,400</td>
+                    <td className="text-gray-500">₹100</td>
+                    <td className="font-medium text-gray-700">3</td>
+                  </tr>
+                  <tr>
+                    <td className="py-3.5 text-gray-800">Night</td>
+                    <td className="text-gray-500">10-6</td>
+                    <td className="font-semibold">₹900</td>
+                    <td className="text-gray-500">-</td>
+                    <td className="font-medium text-gray-700">11</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-            <span className={`shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-bold border ${
-              libCat === 'INSTITUTE'
-                ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-700'
-                : libCat === 'GOVERNMENT'
-                ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-700'
-                : 'bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 border-violet-200 dark:border-violet-700'
-            }`}>
-              🏛️ {libCat === 'INSTITUTE' ? 'Institute' : libCat === 'GOVERNMENT' ? 'Govt Public' : 'Private'}
-            </span>
-          </div>
+            
+            <p className="text-sm text-gray-500 mb-10 pb-8 border-b border-gray-100">
+              Hourly ₹25 • AC seat +₹200/month • Locker ₹100/month • Admission ₹300 one time
+            </p>
 
-          {/* Verified badge */}
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-bold border border-emerald-500/20">
-              ✅ Verified
-            </span>
-            {library?.isFree && (
-              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-500/20">100% FREE</span>
-            )}
-          </div>
-
-          {/* Address */}
-          <div className="flex items-start gap-2 text-sm">
-            <span className="text-violet-500 text-base mt-0.5">📍</span>
-            <div className="flex-1">
-              <p className="text-slate-700 dark:text-slate-300 font-medium text-sm">
-                {library?.address || 'Bhawarkua Main Road, Indore'}
-              </p>
-              <p className="text-xs text-slate-400 mt-0.5">
-                {library?.locality && library?.city ? `${library.locality}, ${library.city}` : '2.1 km from your location'}
-              </p>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold">Reviews</h2>
+              <span className="text-sm font-semibold underline cursor-pointer hover:text-gray-700">4.1/38</span>
             </div>
-            <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(library?.address || library?.name || 'Library')}`}
-              target="_blank" rel="noreferrer"
-              className="shrink-0 px-3 py-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-xs font-bold border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 transition"
-            >
-              Open in Maps
-            </a>
+            <p className="text-sm text-gray-600 mb-20 italic">
+              "Quiet even in exam season. Night shift staff are...
+            </p>
           </div>
 
-          {/* Description */}
-          <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed border-l-2 border-violet-300 dark:border-violet-700 pl-3">
-            Quiet environment with individual cabins, high‑speed WiFi, and a dedicated reading zone.
-          </p>
-
-          {/* Facilities grid */}
-          <div>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2 block">Facilities & Amenities</span>
-            <div className="grid grid-cols-4 gap-3">
-              {[
-                { icon: '📶', label: 'High-Speed\nWiFi' },
-                { icon: '❄️', label: 'Centralized\nAC' },
-                { icon: '📹', label: '24/7 CCTV\nSecurity' },
-                { icon: '⚡', label: 'Power Backup\n/ UPS' },
-                { icon: '🚰', label: 'RO Purified\nWater' },
-                { icon: '📰', label: 'Daily\nNewspapers' },
-                { icon: '🛋️', label: 'Sofa Lounge\nDesks' },
-                { icon: '🩷', label: 'Girls Safety\nWing' },
-              ].map((f) => (
-                <div key={f.label} className="flex flex-col items-center text-center gap-1.5 p-2 rounded-2xl bg-slate-50 dark:bg-[#12192e] border border-slate-100 dark:border-slate-800">
-                  <span className="text-xl">{f.icon}</span>
-                  <span className="text-[10px] font-semibold text-slate-600 dark:text-slate-400 leading-tight whitespace-pre-line">{f.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Contact row */}
-          <div className="flex items-center justify-between gap-3 text-xs pt-1 border-t border-slate-100 dark:border-slate-800">
-            <a href={`tel:${library?.contact_number || ''}`} className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 hover:text-indigo-600 transition">
-              <span>📞</span>
-              <span className="font-bold">{library?.contact_number || '9926012345'}</span>
-              <span className="text-slate-400 text-[10px]">Official POC</span>
-            </a>
-            <a href={`mailto:${library?.email || 'owner@gmail.com'}`} className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 hover:text-indigo-600 transition">
-              <span>✉️</span>
-              <span className="font-bold truncate max-w-[120px]">{library?.email || 'owner.xyz@gmail.com'}</span>
-              <span className="text-slate-400 text-[10px]">Email</span>
-            </a>
-          </div>
-
-          {/* Open hours */}
-          <div className="flex items-center justify-between text-xs px-3 py-2.5 rounded-xl bg-slate-50 dark:bg-[#12192e] border border-slate-100 dark:border-slate-800">
-            <div className="flex items-center gap-2">
-              <span>🕐</span>
-              <span className="font-bold text-slate-800 dark:text-slate-200">Open Today</span>
-              <span className="text-slate-500">6:00 AM – 12:00 AM</span>
-            </div>
-            <span className="text-slate-400">›</span>
-          </div>
-
-          {/* Tab bar: Overview / Photos / Reviews / Rules */}
-          <div className="flex border-b border-slate-200 dark:border-slate-800 -mx-5 px-5 gap-5 text-sm">
-            {(['overview', 'photos', 'reviews', 'rules'] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveDetailTab(tab)}
-                className={`pb-2 font-semibold text-sm border-b-2 capitalize transition ${
-                  activeDetailTab === tab
-                    ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
-                    : 'border-transparent text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
-                }`}
-              >
-                {tab === 'photos' ? `Photos${libraryPhotos.length > 0 ? ` (${libraryPhotos.length})` : ''}` : tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
-          </div>
-
-          {/* ── TABBED CONTENT ── */}
-          {activeDetailTab === 'overview' && (
-            <>
-              {/* About section */}
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 pb-safe z-50">
+            <div className="max-w-xl mx-auto flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-slate-900 dark:text-white mb-1">About This Library</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-                  {library?.name || 'Pragya Study Zone'} is a peaceful and well-maintained study space located in the heart of Indore. It offers comfortable seating, personal cabins, and all essential amenities for focused study.
-                </p>
-                <button className="text-indigo-600 dark:text-indigo-400 text-xs font-bold mt-1 flex items-center gap-1">Read More ↓</button>
+                <div className="font-bold text-xl">₹800 <span className="text-sm text-gray-500 font-normal">/ month</span></div>
+                <div className="text-xs text-gray-500 mt-0.5">Pay at library</div>
               </div>
-
-              {/* Reviews preview */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-900 dark:text-white text-sm">Reviews (328)</span>
-                  <button onClick={() => setActiveDetailTab('reviews')} className="text-indigo-600 dark:text-indigo-400 text-xs font-bold">View All →</button>
-                </div>
-                <div className="flex gap-3 overflow-x-auto pb-1">
-                  {[{name:'Ananya S.', time:'2 weeks ago', text:'Very clean, peaceful environment. Perfect for long study hours!'}].map((r,i)=>(
-                    <div key={i} className="shrink-0 w-64 p-3 rounded-2xl bg-slate-50 dark:bg-[#12192e] border border-slate-100 dark:border-slate-800">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-7 h-7 rounded-full bg-indigo-500 text-white text-xs font-bold flex items-center justify-center">{r.name[0]}</div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{r.name}</p>
-                          <div className="flex items-center gap-1">
-                            <span className="text-amber-500 text-xs">★★★★★</span>
-                            <span className="text-[10px] text-slate-400">{r.time}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">{r.text}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* ── PHOTOS TAB ── */}
-          {activeDetailTab === 'photos' && (
-            <div>
-              {libraryPhotos.length === 0 ? (
-                <div className="py-12 flex flex-col items-center gap-3 text-slate-400">
-                  <span className="text-5xl">📷</span>
-                  <p className="text-sm font-semibold">No photos uploaded yet</p>
-                  <p className="text-xs text-slate-400">The library owner hasn't added photos yet.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  {libraryPhotos.map((photo, i) => (
-                    <button
-                      key={photo.id}
-                      onClick={() => { setPhotoIndex(i); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                      className="relative aspect-square rounded-2xl overflow-hidden bg-slate-200 dark:bg-slate-800 hover:opacity-90 transition"
-                    >
-                      <img src={photo.url} alt={photo.caption || `Photo ${i + 1}`} className="w-full h-full object-cover" />
-                      {photo.caption && (
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-                          <p className="text-white text-[11px] font-semibold truncate">{photo.caption}</p>
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ── REVIEWS TAB ── */}
-          {activeDetailTab === 'reviews' && (
-            <div className="space-y-3">
-              {[{name:'Ananya S.', stars: 5, time:'2 weeks ago', text:'Very clean, peaceful environment. Perfect for long study hours!'},{name:'Rahul M.', stars: 4, time:'1 month ago', text:'Great ambience and helpful staff. Would definitely visit again.'}].map((r,i) => (
-                <div key={i} className="p-3 rounded-2xl bg-slate-50 dark:bg-[#12192e] border border-slate-100 dark:border-slate-800">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <div className="w-8 h-8 rounded-full bg-indigo-500 text-white text-sm font-bold flex items-center justify-center">{r.name[0]}</div>
-                    <div>
-                      <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{r.name}</p>
-                      <div className="flex items-center gap-1">
-                        <span className="text-amber-500 text-xs">{'★'.repeat(r.stars)}{'☆'.repeat(5-r.stars)}</span>
-                        <span className="text-[10px] text-slate-400">{r.time}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">{r.text}</p>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* ── RULES TAB ── */}
-          {activeDetailTab === 'rules' && (
-            <div className="space-y-2">
-              {['Maintain silence inside the study hall at all times.','Mobile phones must be kept on silent mode.','Food and beverages are not allowed inside.','Students must carry a valid ID card.','Strictly no ragging or misbehaviour.','Seats cannot be reserved without booking.'].map((rule, i) => (
-                <div key={i} className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-[#12192e] border border-slate-100 dark:border-slate-800">
-                  <span className="shrink-0 w-5 h-5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 text-xs font-bold flex items-center justify-center mt-0.5">{i+1}</span>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">{rule}</p>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Visitor Pass & Complaint quick actions */}
-          <div className="flex gap-3">
-            {library?.allowVisitorPasses !== false && (
-              <button
-                type="button"
-                onClick={() => setShowVisitorModal(true)}
-                className="flex-1 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs shadow-md shadow-violet-600/20 transition cursor-pointer flex items-center justify-center gap-1.5"
+              <button 
+                onClick={() => setActiveDetailTab('seat_map' as any)} 
+                className="bg-[#ffdb4d] hover:bg-[#e6c545] text-black font-semibold rounded-lg px-8 py-3.5 transition-colors shadow-sm"
               >
-                🎟️ Request Visitor Pass
+                Book a seat
               </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setShowComplaintModal(true)}
-              className="flex-1 py-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5"
-            >
-              📢 Report Issue
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="max-w-xl mx-auto bg-gray-50 min-h-screen relative flex flex-col">
+          <div className="flex items-center justify-between p-4 bg-white border-b border-gray-100 sticky top-0 z-10">
+            <button onClick={() => setActiveDetailTab('overview')} className="p-2 -ml-2 rounded-full hover:bg-gray-100">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+            <span className="text-lg font-bold">Choose a seat</span>
+            <span className="text-sm border border-gray-300 rounded-md px-2.5 py-1.5 font-medium flex items-center gap-1.5">
+              ⏱ 6:41
+            </span>
+          </div>
+          
+          <div className="p-4 bg-white border-b border-gray-200">
+            <div className="flex gap-5 text-sm font-medium text-gray-400 mb-4 px-1">
+              <span className="text-black border-b-2 border-black pb-1.5">Type ↗</span>
+              <span className="hover:text-gray-700 cursor-pointer">Time ↗</span>
+              <span className="hover:text-gray-700 cursor-pointer">Seat</span>
+              <span className="hover:text-gray-700 cursor-pointer">Pay</span>
+            </div>
+            
+            <div className="bg-gray-50 p-3.5 rounded-xl border border-gray-100 text-sm mb-5 text-gray-700 leading-relaxed">
+              Monthly membership • Morning 6:00 - 12:00<br/>
+              from Tue 14 Oct
+            </div>
+            
+            <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
+              <button className="px-5 py-2.5 bg-white border border-gray-200 border-b-[3px] border-b-black rounded-lg font-semibold text-sm whitespace-nowrap shadow-sm">
+                AC hall
+              </button>
+              <button className="px-5 py-2.5 bg-gray-50 border border-transparent rounded-lg font-medium text-gray-500 text-sm whitespace-nowrap hover:bg-gray-100">
+                Non-AC hall
+              </button>
+              <button className="px-5 py-2.5 bg-gray-50 border border-transparent rounded-lg font-medium text-gray-500 text-sm whitespace-nowrap hover:bg-gray-100">
+                Girls room
+              </button>
+            </div>
+          </div>
+          
+          <div className="p-5 flex-1 bg-white mt-2">
+            <div className="text-center text-[10px] font-bold text-gray-400 mb-6 tracking-[0.2em] uppercase">
+              Door and desk
+            </div>
+            
+            <div className="grid grid-cols-6 gap-3 mb-8 max-w-sm mx-auto">
+              {displayedSeats.map((seat) => {
+                const isSelected = selectedSeat?.id === seat.id;
+                const isBooked = seat.status === 'BOOKED' || seat.status === 'LOCKED' || seat.status === 'IN_USE';
+                const isGirlsOnly = seat.is_girls_only === true;
+                
+                let bgClass = "bg-white border-gray-300";
+                let textClass = "text-gray-700";
+                
+                if (isSelected) {
+                  bgClass = "bg-[#ffdb4d] border-[#ffdb4d] ring-4 ring-[#ffdb4d]/30";
+                  textClass = "text-black font-bold";
+                } else if (isGirlsOnly && !isBooked) {
+                  bgClass = "bg-pink-100 border-pink-200";
+                  textClass = "text-pink-500";
+                } else if (isBooked) {
+                  bgClass = "bg-gray-100 border-gray-200";
+                  textClass = "text-gray-400";
+                }
+
+                return (
+                  <button 
+                    key={seat.id} 
+                    onClick={() => {
+                      if (!isBooked) {
+                        setSelectedSeat(seat);
+                      }
+                    }}
+                    className={`w-11 h-11 rounded-lg border shadow-sm ${bgClass} ${textClass} flex items-center justify-center text-sm transition-all hover:border-gray-400 focus:outline-none`}
+                  >
+                    {seat.seatCode}
+                  </button>
+                )
+              })}
+            </div>
+            
+            <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-[11px] font-medium text-gray-500 mb-8 max-w-xs mx-auto">
+              <span className="flex items-center gap-1.5"><span className="w-3.5 h-3.5 rounded border border-gray-300 bg-white inline-block"></span> free</span>
+              <span className="flex items-center gap-1.5"><span className="w-3.5 h-3.5 rounded border border-gray-200 bg-gray-100 inline-block"></span> taken</span>
+              <span className="flex items-center gap-1.5"><span className="w-3.5 h-3.5 rounded border border-pink-200 bg-pink-100 inline-block"></span> girls only</span>
+              <span className="flex items-center gap-1.5"><span className="w-3.5 h-3.5 rounded border border-[#ffdb4d] bg-[#ffdb4d] inline-block"></span> your pick</span>
+            </div>
+            
+            <button className="w-full py-3.5 border border-gray-200 rounded-xl text-sm font-semibold bg-white text-gray-700 shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+              <span>✨</span> Pick best available seat
             </button>
           </div>
 
-          {studentComplaints.length > 0 && (
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 space-y-2">
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block mb-1">
-                Your Active &amp; Recent Complaints ({studentComplaints.length})
-              </span>
-              <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                {studentComplaints.map((c: any) => (
-                  <div key={c.id} className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs space-y-1">
-                    <div className="flex justify-between items-center">
-                      <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">{c.ticket_code}</span>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        c.status === 'RESOLVED'
-                          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                          : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
-                      }`}>
-                        {c.status}
-                      </span>
-                    </div>
-                    <p className="text-slate-800 dark:text-slate-200 font-medium">{c.description}</p>
-                    {c.owner_resolution_notes && (
-                      <p className="text-[11px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 p-2 rounded-lg font-semibold">
-                        📌 Warden Reply: {c.owner_resolution_notes}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* ── 3-STEP BOOKING WIZARD INDICATOR ── */}
-        <div className="bg-white dark:bg-[#0c1220] rounded-none sm:rounded-3xl shadow-sm px-5 pt-5 pb-3 mt-3 sm:mt-4">
-          {/* Thumbnail + library name row */}
-          <div className="flex items-center gap-3 mb-4">
-            {(() => {
-              const thumbSrc = libraryPhotos.length > 0
-                ? libraryPhotos[0].url
-                : 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=200&q=70';
-              return (
-                <img src={thumbSrc} alt={library?.name || 'Library'} className="w-14 h-14 rounded-2xl object-cover shrink-0 border border-slate-100 dark:border-slate-800" />
-              );
-            })()}
-            <div className="flex-1 min-w-0">
-              <p className="font-black text-slate-900 dark:text-white text-base leading-tight truncate">{library?.name || 'Library'}</p>
-              <p className="text-xs text-slate-400 truncate">{library?.locality && library?.city ? `${library.locality}, ${library.city}` : library?.city || ''}</p>
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">✅ Verified</span>
-            </div>
-          </div>
-
-          {/* Step pills */}
-          <div className="flex items-center gap-0">
-            {[
-              { num: 1, label: 'Time' },
-              { num: 2, label: 'Select Seat' },
-              { num: 3, label: 'Confirm' },
-            ].map((step, idx) => {
-              const isActive = !selectedSeat ? step.num === 1 : step.num <= 2;
-              const isDone   = selectedSeat && step.num === 1;
-              return (
-                <React.Fragment key={step.num}>
-                  <div className="flex flex-col items-center gap-1">
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black transition-all ${
-                      isDone
-                        ? 'bg-emerald-500 text-white'
-                        : isActive
-                        ? 'bg-violet-600 text-white shadow-md shadow-violet-500/30'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
-                    }`}>
-                      {isDone ? '✓' : step.num}
-                    </div>
-                    <span className={`text-[10px] font-bold ${
-                      isActive ? 'text-violet-600 dark:text-violet-400' : 'text-slate-400'
-                    }`}>{step.label}</span>
-                  </div>
-                  {idx < 2 && (
-                    <div className={`flex-1 h-[2px] mb-4 mx-1 rounded-full ${
-                      isDone || (selectedSeat && step.num === 1) ? 'bg-emerald-400' : 'bg-slate-200 dark:bg-slate-700'
-                    }`} />
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-[#0c1220] rounded-none sm:rounded-3xl shadow-sm px-5 py-5 mt-3 sm:mt-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-black text-slate-900 dark:text-white">Step 2: Choose Your Seat</h2>
-              <p className="text-[11px] text-slate-400 mt-0.5">Step 2 of 3</p>
-            </div>
-          </div>
-
-          {/* Seat legend */}
-          <div className="flex flex-wrap gap-3 text-[11px]">
-            <div className="flex items-center gap-1.5">
-              <div className="w-5 h-5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600" />
-              <span className="text-slate-500">Available</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-5 h-5 rounded bg-violet-600 border border-violet-700" />
-              <span className="text-slate-500">Selected</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-5 h-5 rounded bg-slate-400 dark:bg-slate-600 border border-slate-500" />
-              <span className="text-slate-500">Occupied</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-5 h-5 rounded bg-pink-200 dark:bg-pink-900/40 border border-pink-400" />
-              <span className="text-slate-500">Girls Only</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-amber-500 text-xs">⚡</span>
-              <span className="text-slate-500">Socket</span>
-            </div>
-          </div>
-
-          {/* View toggle */}
-          <div className="flex gap-2">
-            <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-violet-600 text-white text-xs font-bold shadow">⊞ Grid View</button>
-            <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold">≡ List View</button>
-            <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold">🗺️ Study Layout</button>
-          </div>
-
-          {/* ── ACTUAL SEAT MAP section begins below ── */}
-
-          <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1220] p-6 shadow-sm space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 pb-safe z-50">
+            <div className="max-w-xl mx-auto flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-violet-600 dark:text-violet-400">
-                  Verified Library Dossier
-                </span>
-                <h2 className="text-xl font-black text-slate-900 dark:text-white">
-                  {library?.name || 'IIT Bhilai Library'}
-                </h2>
+                <div className="font-bold text-lg">Seat {selectedSeat?.seatCode || '12'} - AC hall</div>
+                <div className="text-xs text-gray-500 mt-0.5">₹1,000 / month</div>
               </div>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                  ((library?.library_category || library?.libraryCategory) ?? 'INSTITUTE').toUpperCase().includes('INSTITUTE')
-                    ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30'
-                    : ((library?.library_category || library?.libraryCategory) ?? '').toUpperCase().includes('GOV')
-                    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30'
-                    : 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20'
-                }`}>
-                  {((library?.library_category || library?.libraryCategory) ?? 'INSTITUTE').toUpperCase().includes('INSTITUTE') ? '🏛️ INSTITUTE LIBRARY' : ((library?.library_category || library?.libraryCategory) ?? '').toUpperCase().includes('GOV') ? '🏛️ GOVERNMENT PUBLIC' : '🏢 PRIVATE SPACE'}
-                </span>
-                {library?.isFree && (
-                  <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                    100% FREE
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Address & POC Contact Info */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#12192e] border border-slate-100 dark:border-slate-800/80 space-y-2">
-                <div>
-                  <span className="text-[10px] font-bold text-slate-400 block uppercase mb-0.5">📍 Full Address</span>
-                  <p className="font-semibold text-slate-800 dark:text-slate-200">
-                    {library?.address || 'IIT Bhilai Campus, Kutelabhata, Durg-Bhilai, Chhattisgarh 491001'}
-                  </p>
-                </div>
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(library?.address || library?.name || 'IIT Bhilai')}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-extrabold text-[11px] transition border border-indigo-500/20 cursor-pointer"
-                >
-                  🗺️ Open in Google Maps →
-                </a>
-              </div>
-
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#12192e] border border-slate-100 dark:border-slate-800/80">
-                <span className="text-[10px] font-bold text-slate-400 block uppercase mb-0.5">📞 Official POC Contact</span>
-                <p className="font-bold font-mono text-indigo-600 dark:text-indigo-400 text-sm">
-                  {library?.contact_number || '+91 771 255 1234'}
-                </p>
-                <p className="text-[11px] text-slate-500 truncate mt-0.5">{library?.email || 'library@iitbhilai.ac.in'}</p>
-              </div>
-            </div>
-
-            {/* Facilities & Amenities Badges */}
-            <div>
-              <span className="text-[10px] font-bold text-slate-400 block uppercase mb-2">⚡ Available Facilities & Safety</span>
-              <div className="flex flex-wrap gap-2 text-xs">
-                <span className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 font-medium">
-                  📶 High-Speed WiFi
-                </span>
-                <span className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 font-medium">
-                  ❄️ Centralized AC
-                </span>
-                <span className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 font-medium">
-                  📹 24/7 CCTV Security
-                </span>
-                <span className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 font-medium">
-                  ⚡ Power Backup / UPS
-                </span>
-                <span className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 font-medium">
-                  🚰 RO Purified Water
-                </span>
-                <span className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 font-medium">
-                  📰 Daily Newspapers
-                </span>
-                <span className="px-3 py-1.5 rounded-xl bg-pink-500/10 text-pink-600 dark:text-pink-400 font-bold border border-pink-500/20">
-                  🩷 Girls Safety Wing
-                </span>
-                <span className="px-3 py-1.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold border border-amber-500/20">
-                  🛋️ Sofa Lounge Desks
-                </span>
-              </div>
-            </div>
-
-            {/* Quick Visitor Pass Request Card */}
-            <div className="p-4 rounded-2xl bg-violet-50/50 dark:bg-violet-950/20 border border-violet-200 dark:border-violet-900/40 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h4 className="text-xs font-bold text-violet-900 dark:text-violet-200 flex items-center gap-1.5">
-                  <span>🎟️</span>
-                  <span>Need a Quick 40-Min Visit? (Book Issue / Return / Enquiry)</span>
-                </h4>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  {library?.allowVisitorPasses !== false && library?.allow_visitor_passes !== false
-                    ? "Don't need a full study desk? Request an instant 40-minute Circulation Visitor Pass to visit the library counter."
-                    : "Visitor passes are currently disabled by the library owner for this location."}
-                </p>
-              </div>
-              {library?.allowVisitorPasses !== false && library?.allow_visitor_passes !== false ? (
-                <button
-                  type="button"
-                  onClick={() => setShowVisitorModal(true)}
-                  className="px-4 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs shadow-md shadow-violet-600/20 transition cursor-pointer flex items-center gap-1.5"
-                >
-                  <span>🎟️</span>
-                  <span>Request Visitor Pass</span>
-                </button>
-              ) : (
-                <span className="px-3 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold text-xs border border-slate-300 dark:border-slate-700 flex items-center gap-1.5">
-                  <span>🚫</span>
-                  <span>Visitor Passes Disabled</span>
-                </span>
-              )}
-            </div>
-
-            {/* Student Grievance & Feedback Corner Card */}
-            <div className="p-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900/40 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h4 className="text-xs font-bold text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
-                  <span>📢</span>
-                  <span>Student Grievance &amp; Feedback Desk</span>
-                </h4>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Experiencing issues with AC, Wi-Fi speed, cleanliness, or noise? Report to library warden directly.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowComplaintModal(true)}
-                className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition cursor-pointer"
-              >
-                + Report Issue / File Complaint
-              </button>
-            </div>
-
-            {/* Display Filed Complaints if Any */}
-            {studentComplaints.length > 0 && (
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#0c1220] border border-slate-200 dark:border-slate-800 space-y-2">
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block mb-1">
-                  Your Active &amp; Recent Complaints ({studentComplaints.length})
-                </span>
-                <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                  {studentComplaints.map((c: any) => (
-                    <div key={c.id} className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs space-y-1">
-                      <div className="flex justify-between items-center">
-                        <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">{c.ticket_code}</span>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                          c.status === 'RESOLVED'
-                            ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                            : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
-                        }`}>
-                          {c.status}
-                        </span>
-                      </div>
-                      <p className="text-slate-800 dark:text-slate-200 font-medium">{c.description}</p>
-                      {c.owner_resolution_notes && (
-                        <p className="text-[11px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 p-2 rounded-lg font-semibold">
-                          📌 Warden Reply: {c.owner_resolution_notes}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div>
-            <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800 dark:text-white mb-3">
-              STEP 1: CHOOSE VISIT TIME & DURATION
-            </h2>
-
-            {/* ── INSTITUTE LIBRARIES: DURATION-FIRST & FIXED SHIFT MODEL ── */}
-            {library?.libraryCategory === 'INSTITUTE' ? (
-              <div className="space-y-4 mb-6">
-                <div className="flex gap-2 mb-3">
-                  <button
-                    type="button"
-                    onClick={() => setInstituteTimeMode('SHIFT')}
-                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold border transition cursor-pointer ${
-                      instituteTimeMode === 'SHIFT'
-                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/20'
-                        : 'bg-white dark:bg-[#0c1220] border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-indigo-400'
-                    }`}
-                  >
-                    📅 Institute Fixed Shifts
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setInstituteTimeMode('PRESET')}
-                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold border transition cursor-pointer ${
-                      instituteTimeMode !== 'SHIFT'
-                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/20'
-                        : 'bg-white dark:bg-[#0c1220] border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-indigo-400'
-                    }`}
-                  >
-                    ⏱ Duration / Custom Slot
-                  </button>
-                </div>
-
-                {instituteTimeMode === 'SHIFT' ? (
-                  /* Fixed Shifts Grid for Institute */
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                    {shifts.map((shift) => {
-                      const isSelected = activeShift?.id === shift.id;
-                      return (
-                        <div
-                          key={shift.id}
-                          onClick={() => {
-                            setActiveShift(shift);
-                            fetchSeats(shift.id);
-                            setSelectedSeat(null);
-                          }}
-                          className={`relative rounded-2xl p-4 cursor-pointer transition-all duration-200 border ${
-                            isSelected
-                              ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/50 dark:bg-[#12192e] ring-2 ring-indigo-500/40 shadow-md shadow-indigo-500/10'
-                              : 'border-slate-200 dark:border-slate-800/90 bg-white dark:bg-[#0c1220] hover:border-slate-300 dark:hover:border-slate-700'
-                          }`}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                                {shift.shift_name}
-                              </h3>
-                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="border-t border-slate-200/80 dark:border-slate-800 my-3"></div>
-
-                          <div className="flex items-center justify-between">
-                            <span className={`text-xs font-bold ${
-                              (shiftFreeSeats[shift.id] ?? shift.freeCount) > 0
-                                ? 'text-emerald-600 dark:text-emerald-400'
-                                : 'text-rose-500 dark:text-rose-400'
-                            }`}>
-                              {shiftFreeSeats[shift.id] !== undefined
-                                ? `${shiftFreeSeats[shift.id]} available`
-                                : shift.freeCount !== undefined
-                                  ? `${shift.freeCount} free`
-                                  : '...'}
-                            </span>
-                            <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                              100% Free
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  /* Duration Relative Cards & Custom Time Slider */
-                  <div className="space-y-4">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                      <div>
-                        <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 font-extrabold text-[10px] uppercase tracking-wider">
-                          Institute Duration Model
-                        </span>
-                        <h3 className="font-bold text-slate-900 dark:text-white text-sm mt-1">
-                          Choose Study Session Duration (Starts Now)
-                        </h3>
-                      </div>
-                      <span className="text-xs font-mono font-extrabold text-indigo-600 dark:text-indigo-400">
-                        {instituteTimeMode === 'CUSTOM'
-                          ? `Custom (${customStartTime || 'Now'} · ${Math.floor(flexibleDurationMinutes / 60)}h${flexibleDurationMinutes % 60 > 0 ? ` ${flexibleDurationMinutes % 60}m` : ''})`
-                          : `${Math.floor(flexibleDurationMinutes / 60)}h ${flexibleDurationMinutes % 60 > 0 ? `${flexibleDurationMinutes % 60}m` : ''} (${flexibleDurationMinutes} mins)`}
-                      </span>
-                    </div>
-
-                    {/* 5 Duration-Relative Cards Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
-                      {[
-                        { id: '30m', title: '30 min', subtitle: 'Quick Study Gap', duration: 30, icon: '⚡' },
-                        { id: '1h', title: '1 hour', subtitle: 'Between Classes', duration: 60, icon: '📖' },
-                        { id: '2h', title: '2 hours', subtitle: 'Standard Study', duration: 120, icon: '🎯' },
-                        { id: '3h', title: '3 hours', subtitle: 'Extended Block', duration: 180, icon: '📚' },
-                        { id: 'custom', title: 'Custom Slot', subtitle: 'Pick Start & Duration', duration: 0, isCustom: true, icon: '⏱' },
-                      ].map((preset) => {
-                        const isCardSelected = preset.isCustom
-                          ? instituteTimeMode === 'CUSTOM'
-                          : (instituteTimeMode === 'PRESET' && flexibleDurationMinutes === preset.duration);
-
-                        const availCount = seats.filter(s => s.status === 'AVAILABLE').length;
-
-                        return (
-                          <div
-                            key={preset.id}
-                            onClick={() => {
-                              if (preset.isCustom) {
-                                setInstituteTimeMode('CUSTOM');
-                                if (!customStartTime) {
-                                  const now = new Date();
-                                  const hh = String(now.getHours()).padStart(2, '0');
-                                  const mm = String(now.getMinutes()).padStart(2, '0');
-                                  setCustomStartTime(`${hh}:${mm}`);
-                                }
-                              } else {
-                                setInstituteTimeMode('PRESET');
-                                setFlexibleDurationMinutes(preset.duration);
-                              }
-                            }}
-                            className={`relative rounded-2xl p-4 cursor-pointer transition-all duration-200 border ${
-                              isCardSelected
-                                ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/50 dark:bg-[#12192e] ring-2 ring-indigo-500/40 shadow-md shadow-indigo-500/10'
-                                : 'border-slate-200 dark:border-slate-800/90 bg-white dark:bg-[#0c1220] hover:border-slate-300 dark:hover:border-slate-700'
-                            }`}
-                          >
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                                  <span>{preset.icon}</span> {preset.title}
-                                </h3>
-                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                  {preset.subtitle}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="border-t border-slate-200/80 dark:border-slate-800 my-3"></div>
-
-                            <div className="flex items-center justify-between">
-                              <span className={`text-xs font-bold ${
-                                availCount > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'
-                              }`}>
-                                {preset.isCustom ? 'Flexible' : (availCount > 0 ? `${availCount} free` : '0 free')}
-                              </span>
-                              <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                                100% Free
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Custom Time Slot Expandable Controls for Institute */}
-                    {instituteTimeMode === 'CUSTOM' && (
-                      <div className="p-4 rounded-2xl bg-indigo-50/60 dark:bg-[#0e1628] border border-indigo-200 dark:border-indigo-800/60 space-y-4 mt-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-xs font-extrabold text-indigo-700 dark:text-indigo-300">
-                            Custom Start Time & Session Duration
-                          </span>
-                          <span className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400">
-                            {customStartTime || 'Now'} · {Math.floor(flexibleDurationMinutes / 60)}h{flexibleDurationMinutes % 60 > 0 ? ` ${flexibleDurationMinutes % 60}m` : ''}
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div>
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Start Time</label>
-                            <input
-                              type="time"
-                              value={customStartTime}
-                              onChange={e => setCustomStartTime(e.target.value)}
-                              className="w-full bg-white dark:bg-[#151530] border border-indigo-200 dark:border-indigo-700 rounded-xl px-3 py-2 text-sm font-mono text-slate-800 dark:text-white"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Duration Slider</label>
-                            <input
-                              type="range"
-                              min="30"
-                              max="300"
-                              step="30"
-                              value={flexibleDurationMinutes}
-                              onChange={(e) => setFlexibleDurationMinutes(Number(e.target.value))}
-                              className="w-full accent-indigo-600 cursor-pointer mt-2"
-                            />
-                            <div className="flex justify-between text-[10px] text-slate-400 font-mono mt-1">
-                              <span>30 mins</span>
-                              <span>2.5 hrs</span>
-                              <span>5 hrs (Max Cap)</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* ── RECOMMENDATION & SMART NUDGE (MODULE 28 & 29 INTEGRATION) ── */}
-                {seats.filter(s => s.status === 'AVAILABLE').length === 0 && (
-                  <div className="p-4 rounded-2xl bg-gradient-to-r from-violet-900/40 via-indigo-900/40 to-slate-900/60 border border-violet-500/30 text-white space-y-3 shadow-sm">
-                    <div className="flex items-start gap-3">
-                      <span className="text-2xl">⏰</span>
-                      <div>
-                        <h4 className="font-bold text-sm text-white">
-                          No seats free for {flexibleDurationMinutes} mins right now
-                        </h4>
-                        <p className="text-xs text-slate-300 mt-0.5">
-                          3 seats open up in 15 minutes as ongoing student sessions expire (Module 28 Opening Soon).
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2.5 pt-1">
-                      <button
-                        type="button"
-                        onClick={handleJoinSeatQueue}
-                        disabled={queueJoining}
-                        className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs transition shadow-md shadow-violet-500/20 flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <span>🔔</span> {queueJoining ? 'Joining Queue...' : 'Wait & Get Notified (Join Seat Queue)'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setInstituteTimeMode('PRESET');
-                          setFlexibleDurationMinutes(30);
-                        }}
-                        className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <span>⚡</span> Book a 30-min slot instead
-                      </button>
-                    </div>
-                    {queueStatusMsg && (
-                      <p className="text-xs font-bold text-emerald-400 mt-2 bg-emerald-950/60 p-2.5 rounded-xl border border-emerald-800/60">
-                        {queueStatusMsg}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            ) : (
-              /* ── GOVERNMENT / PRIVATE LIBRARIES: FIXED DAYPART SHIFTS & CUSTOM TIME ── */
-              <div className="space-y-4 mb-6">
-                <div className="flex gap-2 mb-3">
-                  <button
-                    type="button"
-                    onClick={() => setTimeMode('SHIFT')}
-                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold border transition ${
-                      timeMode === 'SHIFT'
-                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/20'
-                        : 'bg-white dark:bg-[#0c1220] border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-indigo-400'
-                    }`}
-                  >
-                    📅 Use Fixed Shift
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTimeMode('CUSTOM');
-                      if (!customStartTime) {
-                        const now = new Date();
-                        const hh = String(now.getHours()).padStart(2, '0');
-                        const mm = String(now.getMinutes()).padStart(2, '0');
-                        setCustomStartTime(`${hh}:${mm}`);
-                      }
-                    }}
-                    className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold border transition ${
-                      timeMode === 'CUSTOM'
-                        ? 'bg-violet-600 text-white border-violet-600 shadow-md shadow-violet-500/20'
-                        : 'bg-white dark:bg-[#0c1220] border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-violet-400'
-                    }`}
-                  >
-                    ⏱ Custom Time Slot
-                  </button>
-                </div>
-
-                {timeMode === 'CUSTOM' && (
-                  <div className="p-4 rounded-2xl bg-violet-50/60 dark:bg-[#0e0e28] border border-violet-200 dark:border-violet-800/50 space-y-3 mb-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-extrabold text-violet-700 dark:text-violet-300">Custom Study Session</span>
-                      <span className="text-xs font-mono font-bold text-violet-600 dark:text-violet-400">
-                        {customStartTime} · {Math.floor(customDurationMinutes / 60)}h{customDurationMinutes % 60 > 0 ? ` ${customDurationMinutes % 60}m` : ''}
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Start Time</label>
-                        <input
-                          type="time"
-                          value={customStartTime}
-                          onChange={e => setCustomStartTime(e.target.value)}
-                          className="w-full bg-white dark:bg-[#151530] border border-violet-200 dark:border-violet-700 rounded-xl px-3 py-2 text-sm font-mono text-slate-800 dark:text-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Duration</label>
-                        <select
-                          value={customDurationMinutes}
-                          onChange={e => setCustomDurationMinutes(Number(e.target.value))}
-                          className="w-full bg-white dark:bg-[#151530] border border-violet-200 dark:border-violet-700 rounded-xl px-3 py-2 text-sm font-bold text-slate-800 dark:text-white"
-                        >
-                          {[30, 60, 90, 120, 180, 240, 300].map(m => (
-                            <option key={m} value={m}>{m < 60 ? `${m} min` : `${m / 60}h${m % 60 > 0 ? ` ${m % 60}m` : ''}`}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                    <p className="text-[10px] text-slate-400">ℹ️ Your booking will start at the chosen time and last for the selected duration.</p>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  {shifts.map((shift) => {
-                    const isSelected = activeShift?.id === shift.id;
-                    return (
-                      <div
-                        key={shift.id}
-                        onClick={() => {
-                          setActiveShift(shift);
-                          fetchSeats(shift.id);
-                          setSelectedSeat(null);
-                        }}
-                        className={`relative rounded-2xl p-4 cursor-pointer transition-all duration-200 border ${
-                          isSelected
-                            ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/50 dark:bg-[#12192e] ring-2 ring-indigo-500/40 shadow-md shadow-indigo-500/10'
-                            : 'border-slate-200 dark:border-slate-800/90 bg-white dark:bg-[#0c1220] hover:border-slate-300 dark:hover:border-slate-700'
-                        }`}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                              {shift.shift_name}
-                            </h3>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                              {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="border-t border-slate-200/80 dark:border-slate-800 my-3"></div>
-
-                        <div className="flex items-center justify-between">
-                          <span className={`text-xs font-bold ${
-                            (shiftFreeSeats[shift.id] ?? shift.freeCount) > 0
-                              ? 'text-emerald-600 dark:text-emerald-400'
-                              : 'text-rose-500 dark:text-rose-400'
-                          }`}>
-                            {shiftFreeSeats[shift.id] !== undefined
-                              ? `${shiftFreeSeats[shift.id]} available`
-                              : shift.freeCount !== undefined
-                                ? `${shift.freeCount} free`
-                                : '...'}
-                          </span>
-                          <span className={`text-lg font-extrabold ${Number(shift.daily_price) === 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-[#3b82f6]'}`}>
-                            {Number(shift.daily_price) === 0 ? '100% Free' : `₹${shift.daily_price}`}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* ── STEP 2: CHOOSE PHYSICAL CABIN SEAT ── */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800 dark:text-white">
-              STEP 2: CHOOSE PHYSICAL CABIN SEAT
-            </h2>
-            <span className="px-3 py-1 text-[11px] font-semibold rounded-full bg-slate-200/70 dark:bg-[#151e33] text-indigo-700 dark:text-indigo-400 border border-slate-300/60 dark:border-slate-700/60">
-              {library?.seating_type === 'MIXED' ? 'Mixed Layout' : 'Study Layout'}
-            </span>
-          </div>
-
-          <div className="rounded-3xl border border-slate-200 dark:border-slate-800/90 bg-white dark:bg-[#0a0f1d] p-6 sm:p-8 shadow-sm flex flex-col items-center">
-            {/* Legend */}
-            <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400 mb-6 select-none">
-              <span className="flex items-center gap-1.5 font-medium">
-                <span className="w-2.5 h-2.5 rounded-full bg-violet-600"></span> Selected
-              </span>
-              <span className="flex items-center gap-1.5 font-medium">
-                <span className="w-2.5 h-2.5 rounded-full bg-slate-400 dark:bg-slate-600"></span> Available
-              </span>
-              <span className="flex items-center gap-1.5 font-medium">
-                <span className="w-2.5 h-2.5 rounded-full bg-slate-800 dark:bg-slate-900 border border-slate-700"></span> Occupied
-              </span>
-              <span className="flex items-center gap-1.5 font-medium">
-                <span className="w-2.5 h-2.5 rounded-full bg-pink-400"></span> Girls Only
-              </span>
-              <span className="flex items-center gap-1.5 font-medium">⚡ Socket</span>
-            </div>
-
-            {/* BookMyShow Style Front Screen / Entrance Indicator */}
-            <div className="w-full max-w-md mx-auto mb-5 text-center">
-              <div className="h-2 rounded-t-full bg-gradient-to-r from-violet-500/20 via-indigo-500 to-violet-500/20 mb-1"></div>
-              <span className="text-slate-500 dark:text-slate-400 text-[10px] font-extrabold uppercase tracking-widest">
-                ⬆️ STAGE / FRONT ENTRANCE THIS WAY
-              </span>
-            </div>
-
-            {/* Dynamic Seat Grid — BookMyShow Centered Layout */}
-            <div className="overflow-x-auto w-full pb-2 no-scrollbar flex justify-center">
-              <div className="flex flex-col gap-2.5 min-w-max mx-auto items-center p-2 rounded-2xl bg-slate-100/50 dark:bg-slate-900/40 border border-slate-200/60 dark:border-slate-800/60">
-                {Array.from(new Set(displayedSeats.map(s => s.row_idx)))
-                  .sort((a, b) => a - b)
-                  .map(rowIdx => {
-                    const rowSeats = displayedSeats
-                      .filter(s => s.row_idx === rowIdx)
-                      .sort((a, b) => a.col_idx - b.col_idx);
-                    return (
-                      <div key={rowIdx} className="flex gap-2.5 justify-center">
-                        {rowSeats.map((seat) => {
-                          const isSelected = selectedSeat?.id === seat.id;
-                          const seatIdx = displayedSeats.findIndex(s => s.id === seat.id);
-                          const emergencyCount = Math.max(1, Math.round(displayedSeats.length * 0.04));
-                          const isEmergencyQuota = (seatIdx >= 0 && seatIdx < emergencyCount) || (seat as any).is_emergency;
-                          const isEmergencyUnlocked = (seat as any).is_emergency_unlocked || false;
-
-                          const isUnavailable = (seat.status !== 'AVAILABLE' || (isEmergencyQuota && !isEmergencyUnlocked)) && !isSelected;
-                          const isGirls = seat.is_girls_only;
-                          const hasSocket = seat.has_power_socket;
-
-                          let seatIcon = '💻';
-                          if (seat.custom_type_icon) seatIcon = seat.custom_type_icon;
-                          else if (seat.is_sofa || seat.seat_type === 'SOFA') seatIcon = '🛋️';
-                          else if (seat.seat_type === 'RECLINER') seatIcon = '💺';
-                          else if (seat.seat_type === 'WINDOW') seatIcon = '🪟';
-                          else if (seat.seat_type === 'CABIN') seatIcon = '🖥️';
-
-                          if (isSelected) {
-                            return (
-                              <button
-                                key={seat.id}
-                                onClick={() => setSelectedSeat(null)}
-                                className="relative aspect-square w-12 rounded-xl bg-violet-600 border-2 border-violet-400 text-white font-extrabold text-xs flex flex-col items-center justify-center shadow-lg shadow-violet-500/30 scale-105 transition-transform"
-                              >
-                                <span>{seat.seatCode}</span>
-                                <span className="text-[9px] leading-none opacity-90">{seatIcon}</span>
-                                {hasSocket && <span className="absolute -top-1 -right-1 text-[9px] leading-none">⚡</span>}
-                              </button>
-                            );
-                          }
-
-                          if (isUnavailable) {
-                            return (
-                              <div
-                                key={seat.id}
-                                className="aspect-square w-12 rounded-xl bg-slate-100 dark:bg-[#0c1222] border border-slate-200/40 dark:border-slate-800/50 flex flex-col items-center justify-center text-xs font-bold text-slate-300 dark:text-slate-700 cursor-not-allowed select-none"
-                              >
-                                <span>{seat.seatCode}</span>
-                              </div>
-                            );
-                          }
-
-                          // Available seat — style by exact seat category
-                          let seatBorder = 'border-slate-200 dark:border-slate-700';
-                          let seatBg = 'bg-slate-50 dark:bg-[#121a2d]';
-                          let seatTextCls = 'text-slate-700 dark:text-slate-200';
-                          
-                          if (isGirls) {
-                            seatBorder = 'border-pink-400 dark:border-pink-500 ring-1 ring-pink-400/30';
-                            seatBg = 'bg-pink-50 dark:bg-pink-950/30';
-                            seatTextCls = 'text-pink-700 dark:text-pink-300';
-                          } else if (seat.custom_type_name && seat.custom_type_name !== 'Standard') {
-                            seatBorder = 'border-violet-400 dark:border-violet-500 ring-1 ring-violet-400/30';
-                            seatBg = 'bg-violet-50 dark:bg-violet-950/30';
-                            seatTextCls = 'text-violet-700 dark:text-violet-300';
-                          } else if (seat.is_sofa || seat.seat_type === 'SOFA') {
-                            seatBorder = 'border-amber-400 dark:border-amber-500 ring-1 ring-amber-400/30';
-                            seatBg = 'bg-amber-50 dark:bg-amber-950/30';
-                            seatTextCls = 'text-amber-700 dark:text-amber-300';
-                          }
-
-                          return (
-                            <button
-                              key={seat.id}
-                              onClick={() => handleSeatSelect(seat)}
-                              className={`relative aspect-square w-12 rounded-xl ${seatBg} border-2 ${seatBorder} ${seatTextCls} hover:border-violet-500 dark:hover:border-violet-400 font-bold text-xs flex flex-col items-center justify-center transition-all hover:scale-105 active:scale-95`}
-                            >
-                              <span>{seat.seatCode}</span>
-                              <span className="text-[9px] leading-none opacity-80">{seatIcon}</span>
-                              {hasSocket && <span className="absolute -top-1 -right-1 text-[9px] leading-none">⚡</span>}
-                              {isGirls && <span className="absolute -bottom-1 -right-1 text-[9px] leading-none">🩷</span>}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
-
-                {displayedSeats.length === 0 && (
-                  <div className="py-10 text-center text-slate-400 dark:text-slate-600">
-                    <p className="text-sm font-semibold">Loading seat layout...</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* ── Interactive Seat Details & Specs Card ── */}
-            {selectedSeat && (
-              <div className="w-full mt-6 p-4 rounded-2xl bg-indigo-50/80 dark:bg-[#12192e] border border-indigo-200 dark:border-indigo-800/60 text-xs space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                <div className="flex items-center justify-between border-b border-indigo-200/60 dark:border-indigo-800/40 pb-2.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-bold text-indigo-700 dark:text-indigo-300">
-                      🪑 Desk {selectedSeat.seatCode}
-                    </span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-violet-500/15 text-violet-700 dark:text-violet-300 border border-violet-500/30">
-                      {selectedSeat.custom_type_icon || (selectedSeat.is_sofa ? '🛋️' : selectedSeat.is_girls_only ? '🩷' : '💻')} {selectedSeat.custom_type_name || (selectedSeat.is_sofa ? 'Sofa Seating' : selectedSeat.is_girls_only ? 'Girls Reserved' : 'Standard Study Desk')}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => setSelectedSeat(null)}
-                    className="text-slate-400 hover:text-slate-600 dark:hover:text-white font-bold"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                {(() => {
-                  const slotInfo = getSelectedSlotInfo();
-                  return (
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-slate-700 dark:text-slate-300">
-                      <div>
-                        <span className="text-[10px] text-slate-400 block uppercase font-bold">{slotInfo.slotLabel}</span>
-                        <span className="font-bold text-indigo-600 dark:text-indigo-400">{slotInfo.slotName}</span>
-                      </div>
-
-                      <div>
-                        <span className="text-[10px] text-slate-400 block uppercase font-bold">Slot Timing</span>
-                        <span className="font-semibold text-slate-900 dark:text-white">{slotInfo.timing}</span>
-                      </div>
-
-                      <div>
-                        <span className="text-[10px] text-slate-400 block uppercase font-bold">Slot Price</span>
-                        <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                          {slotInfo.price}
-                        </span>
-                      </div>
-
-                      <div>
-                        <span className="text-[10px] text-slate-400 block uppercase font-bold">Socket & Comfort</span>
-                        <span className="font-semibold">{selectedSeat.has_power_socket !== false ? '⚡ Dedicated Socket' : 'No Socket'}</span>
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                <div className="flex flex-wrap gap-2 pt-1 border-t border-indigo-200/40 dark:border-indigo-800/30 text-[11px] text-slate-500 dark:text-slate-400">
-                  <span>❄️ AC Distance: <strong>{selectedSeat.dist_to_ac_m || 2.5}m</strong></span>
-                  <span>•</span>
-                  <span>🚪 Exit Distance: <strong>{selectedSeat.dist_to_door_m || 4.0}m</strong></span>
-                  <span>•</span>
-                  <span>🛡️ Section: <strong>{selectedSeat.is_girls_only ? '♀ Girls Only Reserved' : 'General Admission'}</strong></span>
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-
-
-        {/* ── STEP 3: CONFIRM CTA ── */}
-        <section className="pt-2">
-          {checkoutError && (
-            <div className="mb-3 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-500 text-xs">
-              {checkoutError}
-            </div>
-          )}
-
-          {(() => {
-            const slotInfo = getSelectedSlotInfo();
-            return (
-              <button
+              <button 
                 onClick={handleCheckout}
-                disabled={checkoutLoading}
-                className={`w-full py-4 px-6 rounded-2xl text-white font-extrabold text-base transition-all shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
-                  slotInfo.isFree
-                    ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/30'
-                    : 'bg-[#00a86b] hover:bg-[#00925c] shadow-emerald-500/25'
-                }`}
+                className="bg-[#ffdb4d] hover:bg-[#e6c545] text-black font-semibold rounded-lg px-8 py-3.5 transition-colors shadow-sm"
               >
-                {checkoutLoading ? (
-                  <>
-                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Reserving Desk...
-                  </>
-                ) : selectedSeat ? (
-                  slotInfo.isFree ? (
-                    `⚡ Confirm Free Seat Booking (Seat ${selectedSeat.seatCode} · ${slotInfo.timingShort} · 100% Free)`
-                  ) : (
-                    `Confirm Direct Reservation & Pass (Seat ${selectedSeat.seatCode} · ${slotInfo.price} · ${slotInfo.timingShort})`
-                  )
-                ) : (
-                  slotInfo.isFree ? (
-                    `Confirm Free Seat Booking (${slotInfo.timingShort} · 100% Free)`
-                  ) : (
-                    `Confirm Direct Reservation & Pass (${slotInfo.price})`
-                  )
-                )}
+                Continue
               </button>
-            );
-          })()}
-
-          <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-3 pb-20 md:pb-4">
-            {getSelectedSlotInfo().isFree
-              ? 'Instant Confirmed Free Digital Pass · No Payment Required · Zero Hidden Charges'
-              : 'Secure Desk Reservation · DPDP Identity Verification Included'}
-          </p>
-        </section>
-      </main>
-
-      {/* ── BOOK MY SHOW STYLE STICKY BOTTOM BAR FOR MOBILE PHONES ── */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#0c1220]/95 border-t border-slate-200 dark:border-slate-800 p-3 shadow-2xl backdrop-blur-md flex items-center justify-between gap-3">
-        <div className="flex flex-col">
-          <span className="text-[10px] uppercase font-extrabold text-slate-400 tracking-wider">
-            {selectedSeat ? `Desk ${selectedSeat.seatCode}` : 'No Seat Picked'}
-          </span>
-          <span className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400">
-            {getSelectedSlotInfo().isFree ? '100% Free' : getSelectedSlotInfo().price}
-          </span>
+            </div>
+          </div>
         </div>
-        <button
-          onClick={handleCheckout}
-          disabled={checkoutLoading}
-          className={`py-3 px-5 rounded-xl text-white font-extrabold text-xs shadow-lg transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ${
-            getSelectedSlotInfo().isFree
-              ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/30'
-              : 'bg-violet-600 hover:bg-violet-500 shadow-violet-500/30'
-          }`}
-        >
-          {checkoutLoading ? (
-            'Reserving...'
-          ) : selectedSeat ? (
-            getSelectedSlotInfo().isFree ? '⚡ Book Free Seat' : 'Confirm & Reserve →'
-          ) : (
-            'Select Seat Below'
-          )}
-        </button>
-      </div>
+      )}
 
       {/* ── IN-MODAL GUEST HANDSHAKE AUTHENTICATION MODAL ── */}
       {showGuestModal && (
