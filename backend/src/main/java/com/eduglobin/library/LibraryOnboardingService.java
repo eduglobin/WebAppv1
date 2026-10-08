@@ -99,11 +99,17 @@ public class LibraryOnboardingService {
                 || (request.getBaseDeskPriceMonthly() != null && request.getBaseDeskPriceMonthly().compareTo(BigDecimal.ZERO) == 0);
         BigDecimal monthlyPrice = request.getBaseDeskPriceMonthly() != null ? request.getBaseDeskPriceMonthly() : BigDecimal.valueOf(800.00);
 
-        // Check if owner already has an onboarded library with this slug to update vs insert fresh
+        // Check if owner already has an onboarded library to update vs insert fresh
         List<UUID> existingIds = List.of();
+        String findExistingSql = "SELECT id FROM libraries WHERE owner_id = :ownerUuid ORDER BY created_at DESC LIMIT 1";
+        existingIds = jdbcTemplate.query(findExistingSql, new MapSqlParameterSource("ownerUuid", ownerUuid), (rs, rowNum) -> (UUID) rs.getObject("id"));
+        
         if (request.getSlug() != null && !request.getSlug().isBlank()) {
-            String findExistingSql = "SELECT id FROM libraries WHERE (owner_id = :ownerUuid AND slug = :slug) OR slug = :slug LIMIT 1";
-            existingIds = jdbcTemplate.query(findExistingSql, new MapSqlParameterSource("ownerUuid", ownerUuid).addValue("slug", request.getSlug()), (rs, rowNum) -> (UUID) rs.getObject("id"));
+            String checkSlugSql = "SELECT id FROM libraries WHERE slug = :slug AND owner_id != :ownerUuid LIMIT 1";
+            List<UUID> slugTaken = jdbcTemplate.query(checkSlugSql, new MapSqlParameterSource("slug", request.getSlug()).addValue("ownerUuid", ownerUuid), (rs, rowNum) -> (UUID) rs.getObject("id"));
+            if (!slugTaken.isEmpty() && (existingIds.isEmpty() || !slugTaken.get(0).equals(existingIds.get(0)))) {
+                throw new EduGlobinException("Slug already exists, please choose a unique one.");
+            }
         }
 
         UUID libraryId;
@@ -131,7 +137,7 @@ public class LibraryOnboardingService {
                     "monthly_locker_mode = :monthlyLockerMode, monthly_locker_price = :monthlyLockerPrice, " +
                     "daily_locker_mode = :dailyLockerMode, daily_locker_price = :dailyLockerPrice, overnight_locker_charge = :overnightLockerCharge, " +
                     "whatsapp_business_number = :whatsappBusinessNumber, " +
-                    "whatsapp_connected = :whatsappConnected, whatsapp_verified = :whatsappVerified, has_book_catalog = :hasBookCatalog, " +
+                    "whatsapp_connected = :whatsappConnected, whatsapp_verified = :whatsappVerified, has_book_catalog = FALSE, " +
                     "approval_status = 'PENDING_APPROVAL', " +
                     "is_published = FALSE " +
                     "WHERE id = :id";
@@ -161,7 +167,6 @@ public class LibraryOnboardingService {
                     .addValue("whatsappBusinessNumber", request.getWhatsappBusinessNumber())
                     .addValue("whatsappConnected", request.isWhatsappConnected())
                     .addValue("whatsappVerified", request.isWhatsappVerified())
-                    .addValue("hasBookCatalog", request.isHasBookCatalog())
                     .addValue("hasDiscussionRoom", request.isHasDiscussionRoom())
                     .addValue("discussionRoomCapacity", request.getDiscussionRoomCapacity())
                     .addValue("wifiAvailable", request.isWifiAvailable())
@@ -233,7 +238,7 @@ public class LibraryOnboardingService {
                     ":maxDailyMinutesPerStudent, :advanceBookingMaxMinutes, :turnoverBufferMinutes, " +
                     ":operatingHoursStart, :operatingHoursEnd, :allowVisitorPasses, :enableMonthlyPassSubscription, " +
                     ":monthlyLockerMode, :monthlyLockerPrice, :dailyLockerMode, :dailyLockerPrice, :overnightLockerCharge, " +
-                    ":whatsappBusinessNumber, :whatsappConnected, :whatsappVerified, :hasBookCatalog" +
+                    ":whatsappBusinessNumber, :whatsappConnected, :whatsappVerified, FALSE" +
                     ")";
 
             MapSqlParameterSource libParams = new MapSqlParameterSource()
@@ -296,8 +301,7 @@ public class LibraryOnboardingService {
                     .addValue("operatingHoursEnd", request.getOperatingHoursEnd() != null ? java.sql.Time.valueOf(request.getOperatingHoursEnd()) : java.sql.Time.valueOf("20:00:00"))
                     .addValue("whatsappBusinessNumber", request.getWhatsappBusinessNumber())
                     .addValue("whatsappConnected", request.isWhatsappConnected())
-                    .addValue("whatsappVerified", request.isWhatsappVerified())
-                    .addValue("hasBookCatalog", request.isHasBookCatalog());
+                    .addValue("whatsappVerified", request.isWhatsappVerified());
 
             jdbcTemplate.update(insertLibrarySql, libParams);
         }
@@ -600,7 +604,7 @@ public class LibraryOnboardingService {
                 "COALESCE(daily_locker_mode, 'NO_LOCKERS') as daily_locker_mode, COALESCE(daily_locker_price, 0) as daily_locker_price, " +
                 "COALESCE(overnight_locker_charge, 0) as overnight_locker_charge, " +
                 "whatsapp_business_number, COALESCE(whatsapp_connected, FALSE) as whatsapp_connected, " +
-                "COALESCE(whatsapp_verified, FALSE) as whatsapp_verified, COALESCE(has_book_catalog, FALSE) as has_book_catalog, created_at " +
+                "COALESCE(whatsapp_verified, FALSE) as whatsapp_verified, created_at " +
                 "FROM libraries WHERE owner_id = CAST(:ownerId AS uuid) ORDER BY created_at DESC LIMIT 1";
         try {
             Map<String, Object> lib = new LinkedHashMap<>(jdbcTemplate.queryForMap(sql, new MapSqlParameterSource("ownerId", ownerId)));
@@ -612,7 +616,16 @@ public class LibraryOnboardingService {
             lib.put("shifts", shifts);
 
             // Fetch seats
-            String seatSql = "SELECT id, seat_code, row_idx, col_idx, is_girls_only, is_sofa, is_free, has_power_socket, seat_type, custom_type_name, custom_type_icon, COALESCE(allocation_type, 'NON_RESERVED') as allocation_type, reserved_status FROM seat_desks WHERE library_id = :libraryId";
+            String seatSql = "SELECT id, seat_code, row_idx, col_idx, is_girls_only, is_sofa, is_free, has_power_socket, seat_type, custom_type_name, custom_type_icon, COALESCE(allocation_type, 'NON_RESERVED') as allocation_type, reserved_status, " +
+                    "CASE " +
+                    "  WHEN reserved_status = 'ACTIVE' AND EXISTS ( " +
+                    "    SELECT 1 FROM reserved_seat_attendance_log al " +
+                    "    WHERE al.seat_id = seat_desks.id AND al.checked_in_at::date = CURRENT_DATE AND al.checked_out_at IS NULL " +
+                    "  ) THEN 'OCCUPIED_TODAY' " +
+                    "  WHEN reserved_status = 'ACTIVE' THEN 'RESERVED_EMPTY_TODAY' " +
+                    "  ELSE reserved_status " +
+                    "END AS display_status " +
+                    "FROM seat_desks WHERE library_id = :libraryId";
             List<Map<String, Object>> seats = jdbcTemplate.queryForList(seatSql, new MapSqlParameterSource("libraryId", libraryId));
             lib.put("seats", seats);
 

@@ -384,7 +384,16 @@ public class PartnerLibraryController {
     public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getLiveSeatsStatus(
             @PathVariable UUID libraryId) {
 
-        String sql = "SELECT sd.seat_code, sd.current_status as sd_status, sd.is_girls_only, sd.is_sofa, sd.is_free, sd.has_power_socket, sd.seat_type, sd.custom_type_name, sd.custom_type_icon, " +
+        String sql = "SELECT sd.id, sd.seat_code, sd.current_status as sd_status, sd.is_girls_only, sd.is_sofa, sd.is_free, sd.has_power_socket, sd.seat_type, sd.custom_type_name, sd.custom_type_icon, " +
+                "COALESCE(sd.allocation_type, 'NON_RESERVED') as allocation_type, sd.reserved_status, " +
+                "CASE " +
+                "  WHEN sd.reserved_status = 'ACTIVE' AND EXISTS ( " +
+                "    SELECT 1 FROM reserved_seat_attendance_log al " +
+                "    WHERE al.seat_id = sd.id AND al.checked_in_at::date = CURRENT_DATE AND al.checked_out_at IS NULL " +
+                "  ) THEN 'OCCUPIED_TODAY' " +
+                "  WHEN sd.reserved_status = 'ACTIVE' THEN 'RESERVED_EMPTY_TODAY' " +
+                "  ELSE sd.reserved_status " +
+                "END AS display_status, " +
                 "b.id as booking_id, b.booking_reference, b.status as b_status, b.checked_in_at, b.valid_from, b.valid_until, b.amount_paid, b.locker_fee, " +
                 "b.college_id_number, b.college_email, b.student_age, b.degree_program, b.branch_department, " +
                 "p.full_name as student_name, COALESCE(p.phone, 'N/A') as student_phone, 'Not Provided' as student_aadhaar, " +

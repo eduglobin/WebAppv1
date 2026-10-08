@@ -18,13 +18,16 @@ public class SeatQueueService {
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final ResourceLockService lockService;
     private final SeatStatusBroadcaster broadcaster;
+    private final FairShareQueueService fairShareQueueService;
 
     public SeatQueueService(NamedParameterJdbcTemplate jdbcTemplate,
                             ResourceLockService lockService,
-                            SeatStatusBroadcaster broadcaster) {
+                            SeatStatusBroadcaster broadcaster,
+                            FairShareQueueService fairShareQueueService) {
         this.jdbcTemplate = jdbcTemplate;
         this.lockService = lockService;
         this.broadcaster = broadcaster;
+        this.fairShareQueueService = fairShareQueueService;
     }
 
     /**
@@ -187,29 +190,39 @@ public class SeatQueueService {
         List<Map<String, Object>> freedSeats = jdbcTemplate.queryForList(freedSeatsSql, new MapSqlParameterSource("libId", libraryId));
         if (freedSeats.isEmpty()) return;
 
-        for (Map<String, Object> seat : freedSeats) {
-            UUID seatId = (UUID) seat.get("id");
-            String seatCode = (String) seat.get("seat_code");
-            String seatingType = (String) seat.get("seating_type");
-            boolean isGirlsOnly = (Boolean) seat.get("is_girls_only");
+            // Find all WAITING queue entries
+            String oldestWaitingSql = "SELECT id, student_id, seat_preference, created_at FROM seat_queue_entries " +
+                    "WHERE library_id = :libId AND status = 'WAITING'";
 
-            // Find oldest WAITING queue entry compatible with this seat
-            String oldestWaitingSql = "SELECT id, seat_preference FROM seat_queue_entries " +
-                    "WHERE library_id = :libId AND status = 'WAITING' " +
-                    "ORDER BY created_at ASC LIMIT 10";
+            List<Map<String, Object>> waitingEntriesMap = jdbcTemplate.queryForList(oldestWaitingSql, new MapSqlParameterSource("libId", libraryId));
 
-            List<Map<String, Object>> waitingEntries = jdbcTemplate.queryForList(oldestWaitingSql, new MapSqlParameterSource("libId", libraryId));
+            for (Map<String, Object> seat : freedSeats) {
+                UUID seatId = (UUID) seat.get("id");
+                String seatCode = (String) seat.get("seat_code");
+                String seatingType = (String) seat.get("seating_type");
+                boolean isGirlsOnly = (Boolean) seat.get("is_girls_only");
 
-            for (Map<String, Object> entry : waitingEntries) {
-                UUID entryId = (UUID) entry.get("id");
-                String pref = (String) entry.get("seat_preference");
+                List<SeatQueueEntryDto> compatibleEntries = new java.util.ArrayList<>();
+                for (Map<String, Object> entry : waitingEntriesMap) {
+                    String pref = (String) entry.get("seat_preference");
+                    if (isPreferenceMatched(pref, seatingType, isGirlsOnly)) {
+                        SeatQueueEntryDto dto = new SeatQueueEntryDto();
+                        dto.setId((UUID) entry.get("id"));
+                        dto.setStudentId((UUID) entry.get("student_id"));
+                        java.sql.Timestamp ts = (java.sql.Timestamp) entry.get("created_at");
+                        if (ts != null) dto.setCreatedAt(ts.toInstant());
+                        compatibleEntries.add(dto);
+                    }
+                }
 
-                if (isPreferenceMatched(pref, seatingType, isGirlsOnly)) {
-                    offerSeatToEntry(entryId, seatId);
-                    break; // Move to next freed seat once offered
+                if (!compatibleEntries.isEmpty()) {
+                    SeatQueueEntryDto fairest = fairShareQueueService.selectFairestMatch(compatibleEntries);
+                    offerSeatToEntry(fairest.getId(), seatId);
+                    
+                    // remove from waitingEntriesMap so we don't offer another seat to the same person
+                    waitingEntriesMap.removeIf(e -> e.get("id").equals(fairest.getId()));
                 }
             }
-        }
     }
 
     private boolean isPreferenceMatched(String preference, String seatingType, boolean isGirlsOnly) {
@@ -247,10 +260,41 @@ public class SeatQueueService {
     }
 
     public boolean hasWaitingEntryFor(UUID libraryId, UUID seatId) {
+        // Here we could filter by seat type, but for now we check if anyone is waiting
+        return hasWaitingEntries(libraryId);
+    }
+
+    public boolean hasWaitingEntries(UUID libraryId) {
+        return getQueueDepth(libraryId) > 0;
+    }
+
+    public int getQueueDepth(UUID libraryId) {
         String sql = "SELECT COUNT(*) FROM seat_queue_entries " +
                 "WHERE library_id = :libId AND status = 'WAITING'";
         Integer count = jdbcTemplate.queryForObject(sql, new MapSqlParameterSource("libId", libraryId), Integer.class);
-        return count != null && count > 0;
+        return count != null ? count : 0;
+    }
+
+    public void notifyNextInLineOfImminentSeat(UUID libraryId, NotificationService notificationService) {
+        String oldestWaitingSql = "SELECT id, student_id, seat_preference, created_at FROM seat_queue_entries " +
+                "WHERE library_id = :libId AND status = 'WAITING'";
+
+        List<Map<String, Object>> waitingEntriesMap = jdbcTemplate.queryForList(oldestWaitingSql, new MapSqlParameterSource("libId", libraryId));
+        if (waitingEntriesMap.isEmpty()) return;
+
+        List<SeatQueueEntryDto> compatibleEntries = new java.util.ArrayList<>();
+        for (Map<String, Object> entry : waitingEntriesMap) {
+            SeatQueueEntryDto dto = new SeatQueueEntryDto();
+            dto.setId((UUID) entry.get("id"));
+            dto.setStudentId((UUID) entry.get("student_id"));
+            java.sql.Timestamp ts = (java.sql.Timestamp) entry.get("created_at");
+            if (ts != null) dto.setCreatedAt(ts.toInstant());
+            compatibleEntries.add(dto);
+        }
+
+        SeatQueueEntryDto fairest = fairShareQueueService.selectFairestMatch(compatibleEntries);
+        notificationService.push(fairest.getStudentId(), "A seat should free up shortly \u2014 you're next", 
+            Map.of("action", "QUEUE_HEADS_UP"));
     }
 
     public List<Map<String, Object>> getLibraryQueueList(UUID libraryId) {

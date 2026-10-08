@@ -63,3 +63,6 @@ desktop.ini
 logs/
 
 !backend/gradle/wrapper/gradle-wrapper.jar
+Npgsql
+Npgsql.dll
+Npgsql.zip

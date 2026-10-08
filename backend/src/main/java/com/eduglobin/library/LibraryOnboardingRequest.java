@@ -50,7 +50,6 @@ public class LibraryOnboardingRequest {
     private String whatsappBusinessNumber;
     private boolean whatsappConnected = false;
     private boolean whatsappVerified = false;
-    private boolean hasBookCatalog = false;
 
     // Flexible Slot Rule Parameters (Institute Libraries)
     private Integer minBookingMinutes = 30;
@@ -318,9 +317,6 @@ public class LibraryOnboardingRequest {
 
     public boolean isWhatsappVerified() { return whatsappVerified; }
     public void setWhatsappVerified(boolean whatsappVerified) { this.whatsappVerified = whatsappVerified; }
-
-    public boolean isHasBookCatalog() { return hasBookCatalog; }
-    public void setHasBookCatalog(boolean hasBookCatalog) { this.hasBookCatalog = hasBookCatalog; }
 
     public static class SeatDto {
         @NotBlank

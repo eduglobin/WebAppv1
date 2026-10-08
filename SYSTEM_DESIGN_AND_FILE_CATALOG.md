@@ -200,3 +200,13 @@ graph TD
 - **`com.eduglobin.reporting`**:
   - `PartnerReportsService.java`: Owner Reports & Dashboard KPIs with separate "Locker Revenue" line item across all 3 booking paths, and `hasLocker`/`lockerFee` columns in `getBookingHistory` and `getStudentLookupReport`.
   - `ReportsDashboardDTO.java`: Standardized DTO holding dashboard metrics including `lockerRevenue`.
+
+## API Gateway (Kong)
+Kong API Gateway has been introduced in `docker-compose.yml` operating on port 8000. It uses DB-less declarative routing (`kong.yml`) to enforce routing to the Vite Frontend and Spring Boot backend. 
+
+## Modules 70-74: Institute Overstay & Rebooking
+- **OverstayDetectionJob**: Triggers alerts to students on expiry and alerts to owners post-grace period.
+- **SeatQueueService**: Notifies the next waiting student when a seat hits OVERSTAY status.
+- **RebookService**: Provides ranked alternatives for continuing a session when the current seat is booked by another.
+- **VacancyForecastService**: Helps walk-ins find the tightest-fitting slot to prevent fragmenting large available blocks.
+- **FairShareQueueService**: Weighs a student's trailing 30-day overstay minutes as a penalty during queue matching.
