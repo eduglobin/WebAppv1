@@ -168,50 +168,6 @@ public class AdminOverviewController {
         return ResponseEntity.ok(ApiResponse.success("Library reinstated and published."));
     }
 
-    /**
-     * POST /api/v1/admin/reset-database
-     * Clears all test bookings, seat locks, complaint tickets, wallets, libraries, and non-super-admin user profiles.
-     */
-    @PostMapping("/reset-database")
-    @PreAuthorize("permitAll()")
-    public ResponseEntity<ApiResponse<String>> resetDatabase() {
-        String[] tablesToDelete = {
-            "cancellation_requests",
-            "booking_disputes",
-            "complaint_tickets",
-            "student_wallets",
-            "bookings",
-            "seat_desks",
-            "lockers",
-            "shifts",
-            "audit_logs"
-        };
-
-        for (String table : tablesToDelete) {
-            try {
-                jdbcTemplate.update("DELETE FROM " + table, new MapSqlParameterSource());
-            } catch (Exception ignored) {}
-        }
-
-        try {
-            jdbcTemplate.update("UPDATE libraries SET approved_by = NULL", new MapSqlParameterSource());
-        } catch (Exception ignored) {}
-
-        try {
-            jdbcTemplate.update("DELETE FROM libraries", new MapSqlParameterSource());
-        } catch (Exception ignored) {}
-
-
-        try {
-            jdbcTemplate.update("DELETE FROM profiles WHERE role != 'SUPER_ADMIN'", new MapSqlParameterSource());
-        } catch (Exception ignored) {}
-
-        try {
-            jdbcTemplate.update("DELETE FROM auth.users WHERE email NOT IN ('admin@eduglobin.com')", new MapSqlParameterSource());
-        } catch (Exception ignored) {}
-
-        return ResponseEntity.ok(ApiResponse.success("Database successfully reset to clean state!"));
-    }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
 

@@ -36,8 +36,8 @@ This document summarizes all additional functionality, backend endpoints, databa
 * **Backend Implementation**:
   * [`MeController.java`](file:///e:/EduGlobin/backend/src/main/java/com/eduglobin/common/MeController.java): Reads `profiles.role` directly from PostgreSQL as the source of truth, returning the accurate `SUPER_ADMIN` authority even if OAuth tokens carry cached claims.
 * **Default Admin Account**:
-  * Email: `admin@eduglobin.com`
-  * Password: `EduglobinAdmin2026!`
+  * Email: `[REDACTED]`
+  * Password: `[REDACTED]`
   * Role: `SUPER_ADMIN`
 
 ---

@@ -75,9 +75,7 @@ public class SecurityConfig {
                                 "/api/v1/location/search",
                                 "/api/v1/locations/search",
                                 "/api/v1/auth/check-email",
-                                "/api/v1/auth/register",
-                                "/api/v1/auth/bootstrap-admin",
-                                "/api/v1/admin/reset-database")
+                                "/api/v1/auth/register")
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/community/threads", "/api/v1/community/threads/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
